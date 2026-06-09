@@ -47,8 +47,16 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura exacta:
   "rank_math_description": "Meta description SEO (160 caracteres máximo)",
   "rank_math_focus_keyword": "keyword principal",
   "tags": ["tag1", "tag2", "tag3"],
-  "unsplash_query": "query en inglés para buscar imagen relacionada (2-3 palabras)"
+  "unsplash_query": "query en inglés para buscar imagen relacionada (2-3 palabras)",
+  "category": "nombre exacto de la categoría más adecuada para este artículo"
 }}
+
+CATEGORÍAS DISPONIBLES — elige UNA según el tema principal del artículo:
+- "Teleradiología" → artículos sobre teleradiología, interpretación remota, radiólogos a distancia
+- "Diagnóstico por Imagen" → PACS, DICOM, RIS, workstations, monitores médicos, modalidades de imagen (TAC, RM, rayos X)
+- "Gestión Hospitalaria" → HIS, digitalización hospitalaria, expediente clínico electrónico, eficiencia operativa, NOM-004
+- "Tecnología Médica" → IA en radiología, interoperabilidad HL7/FHIR, ciberseguridad en salud, tendencias del sector
+- "Medicina General" → contenido de divulgación médica general no específico de radiología o software
 
 IMPORTANTE: El campo "content" debe ser HTML válido con etiquetas <h2>, <h3>, <p>, <ul>, <strong>, <table>.
 No incluyas el H1 dentro del content, solo el cuerpo del artículo.

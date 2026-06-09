@@ -71,9 +71,9 @@ def publish_post(site_key: str, blog_data: dict, featured_media_id: int = None) 
     if featured_media_id:
         payload["featured_media"] = featured_media_id
 
-    # Asignar categoría del sitio
+    # Asignar categoría detectada por Claude o fallback del config
     from config import SITES
-    category_name = SITES[site_key].get("category", "Blog")
+    category_name = blog_data.get("category") or SITES[site_key].get("category", "Tecnología Médica")
     cat_id = get_or_create_category(wp_url, headers, category_name)
     if cat_id:
         payload["categories"] = [cat_id]
