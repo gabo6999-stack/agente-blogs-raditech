@@ -17,6 +17,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 import uvicorn
 from pydantic import BaseModel
+from typing import Optional
 
 from config import SITES
 from tools.trends import pick_topic
@@ -525,7 +526,7 @@ def dashboard():
 
 class PublishRequest(BaseModel):
     site_key: str
-    topic: str = None
+    topic: Optional[str] = None
 
 
 @app.post("/publish")
@@ -568,7 +569,7 @@ def edit_now(req: EditRequest):
 class ImageRequest(BaseModel):
     site_key: str
     post_id: int
-    query: str = None
+    query: Optional[str] = None
 
 
 @app.post("/image")
