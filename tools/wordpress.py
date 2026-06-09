@@ -95,6 +95,26 @@ def publish_post(site_key: str, blog_data: dict, featured_media_id: int = None) 
         response.raise_for_status()
         post = response.json()
         print(f"[WP] Post publicado: {post['link']}")
+
+        # PATCH separado para rank_math — Rank Math no acepta meta en el POST inicial
+        rank_meta = {
+            "meta": {
+                "rank_math_title": blog_data.get("rank_math_title", blog_data["title"]),
+                "rank_math_description": blog_data.get("rank_math_description", ""),
+                "rank_math_focus_keyword": blog_data.get("rank_math_focus_keyword", ""),
+            }
+        }
+        patch = requests.patch(
+            f"{wp_url}/wp-json/wp/v2/posts/{post['id']}",
+            headers=headers,
+            json=rank_meta,
+            timeout=15
+        )
+        if patch.status_code == 200:
+            print(f"[WP] Rank Math meta guardado en post {post['id']}")
+        else:
+            print(f"[WP] Advertencia: rank_math meta no guardado ({patch.status_code})")
+
         return post
 
     except Exception as e:
