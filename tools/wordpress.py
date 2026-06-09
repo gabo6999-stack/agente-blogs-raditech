@@ -71,6 +71,13 @@ def publish_post(site_key: str, blog_data: dict, featured_media_id: int = None) 
     if featured_media_id:
         payload["featured_media"] = featured_media_id
 
+    # Asignar categoría del sitio
+    from config import SITES
+    category_name = SITES[site_key].get("category", "Blog")
+    cat_id = get_or_create_category(wp_url, headers, category_name)
+    if cat_id:
+        payload["categories"] = [cat_id]
+
     # Agregar tags si existen
     tags = blog_data.get("tags", [])
     if tags:
@@ -226,6 +233,32 @@ def update_post(site_key: str, post_id: int, blog_data: dict, featured_media_id:
         if hasattr(e, 'response') and e.response is not None:
             print(f"[WP] Respuesta: {e.response.text[:500]}")
         return None
+
+
+def get_or_create_category(wp_url: str, headers: dict, category_name: str) -> int | None:
+    try:
+        search = requests.get(
+            f"{wp_url}/wp-json/wp/v2/categories",
+            headers=headers,
+            params={"search": category_name},
+            timeout=10
+        )
+        results = search.json()
+        if results:
+            return results[0]["id"]
+        create = requests.post(
+            f"{wp_url}/wp-json/wp/v2/categories",
+            headers=headers,
+            json={"name": category_name, "slug": category_name.lower().replace(" ", "-")},
+            timeout=10
+        )
+        if create.status_code == 201:
+            cat_id = create.json()["id"]
+            print(f"[WP] Categoría creada: '{category_name}' (ID {cat_id})")
+            return cat_id
+    except Exception as e:
+        print(f"[WP] Error con categoría '{category_name}': {e}")
+    return None
 
 
 def get_or_create_tags(wp_url: str, headers: dict, tag_names: list[str]) -> list[int]:

@@ -8,6 +8,7 @@ SITES = {
         "wp_url": os.getenv("SITE1_WP_URL"),
         "wp_user": os.getenv("SITE1_WP_USER"),
         "wp_password": os.getenv("SITE1_WP_PASSWORD"),
+        "category": "Tecnología Médica",
         "niche": "software médico, sistemas PACS-RIS, teleradiología y gestión hospitalaria en México",
         "language": "es",
         "keywords_seed": [
