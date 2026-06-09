@@ -47,7 +47,7 @@ def notify_seo_agent(post_id: int, title: str, content: str, url: str):
     try:
         print(f"[SEO] Enviando blog al agente SEO para optimización...")
         response = requests.post(
-            f"{SEO_AGENT_URL}/optimize-blog",
+            f"{SEO_AGENT_URL}/optimize-raditech-blog",
             json={"post_id": post_id, "title": title, "content": content, "url": url},
             timeout=120
         )
