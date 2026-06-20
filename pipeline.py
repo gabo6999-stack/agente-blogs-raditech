@@ -30,6 +30,23 @@ app = FastAPI()
 
 SEO_AGENT_URL = os.getenv("SEO_AGENT_URL", "https://web-production-3743c.up.railway.app")
 
+
+def notify_nexus(action, detail=None, url=None):
+    """Reporta una actividad a NEXUS (Centro de Comando). Solo corre si hay NEXUS_URL y NEXUS_KEY."""
+    nexus_url = os.getenv("NEXUS_URL")
+    nexus_key = os.getenv("NEXUS_KEY")
+    if not nexus_url or not nexus_key:
+        return
+    try:
+        requests.post(
+            f"{nexus_url}/api/ingest",
+            json={"agent": "Raditech Agente Blogs", "action": action, "detail": detail, "url": url},
+            headers={"x-nexus-key": nexus_key},
+            timeout=15,
+        )
+    except Exception as e:
+        print(f"[NEXUS] No se pudo reportar: {e}")
+
 SCHEDULE_FILE = os.path.join(os.getenv("DATA_DIR", "."), "schedule_config.json")
 DAY_MAP_ES = {
     "monday": "Lunes", "tuesday": "Martes", "wednesday": "Miércoles",
@@ -122,6 +139,12 @@ def run_pipeline(site_key: str, topic: str = None):
             }
             agent_status["last_error"] = None
             print(f"\n[Pipeline] ✅ Blog publicado: {post.get('link')}")
+
+            notify_nexus(
+                action="Publicó un blog (Raditech)",
+                detail=post.get("title", {}).get("rendered", "") or topic,
+                url=post.get("link", ""),
+            )
 
             # 7. Optimizar con agente SEO
             notify_seo_agent(
