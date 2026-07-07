@@ -79,16 +79,25 @@ def notify_seo_agent(post_id: int, title: str, content: str, url: str):
 
 
 def load_schedule_config() -> dict:
+    """Horario por sitio. Parte del default de cada sitio en config.py
+    (SITES[...]["publish_days"/"publish_time"]) y encima aplica lo guardado en el
+    archivo. Así un sitio nuevo respeta su horario de config.py aunque el archivo
+    de horarios todavía no lo tenga."""
+    saved = {}
     if os.path.exists(SCHEDULE_FILE):
-        with open(SCHEDULE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        site_key: {
-            "publish_days": cfg.get("publish_days", ["monday", "tuesday", "thursday", "friday"]),
-            "publish_time": cfg.get("publish_time", "09:00")
+        try:
+            with open(SCHEDULE_FILE, "r", encoding="utf-8") as f:
+                saved = json.load(f)
+        except Exception:
+            saved = {}
+    config = {}
+    for site_key, cfg in SITES.items():
+        s = saved.get(site_key, {})
+        config[site_key] = {
+            "publish_days": s.get("publish_days", cfg.get("publish_days", ["monday", "tuesday", "thursday", "friday"])),
+            "publish_time": s.get("publish_time", cfg.get("publish_time", "09:00")),
         }
-        for site_key, cfg in SITES.items()
-    }
+    return config
 
 
 def save_schedule_config(config: dict):
@@ -285,6 +294,16 @@ def dashboard():
 
     sched_config = load_schedule_config()
     sites_options = "".join([f'<option value="{k}">{k}</option>' for k in SITES.keys()])
+    # Selector del editor de horario: opción "todos los sitios (parejo)" al inicio
+    sched_site_options = '<option value="__all__">🌐 Todos los sitios (parejo)</option>' + sites_options
+    # Horario real de cada sitio, para que al cambiar de sitio el form cargue SUS días/hora
+    site_schedules_js = json.dumps({
+        k: {
+            "days": sched_config.get(k, {}).get("publish_days", ["monday", "tuesday", "thursday", "friday"]),
+            "time": sched_config.get(k, {}).get("publish_time", "09:00"),
+        }
+        for k in SITES.keys()
+    })
 
     schedule_cards = ""
     for site_key in SITES.keys():
@@ -346,9 +365,9 @@ def dashboard():
 
         <div class="card" style="border-left: 4px solid #f59e0b;">
             <h3>⚙️ Cambiar horario</h3>
-            <select id="sched-site" style="margin-bottom:12px;">{sites_options}</select>
+            <select id="sched-site" onchange="cargarHorarioSitio()" style="margin-bottom:12px;">{sched_site_options}</select>
             <p style="font-size:13px;color:#aaa;margin:4px 0 10px;">Días de publicación:</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+            <div id="sched-days" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
                 {day_checkboxes}
             </div>
             <label style="font-size:13px;color:#aaa;">Hora de publicación:</label>
@@ -387,10 +406,21 @@ def dashboard():
         </div>
 
         <script>
+        const SITE_SCHEDULES = {site_schedules_js};
+        function cargarHorarioSitio() {{
+            const site = document.getElementById('sched-site').value;
+            const sched = SITE_SCHEDULES[site];
+            if (!sched) return;  // "__all__" → deja la selección actual como plantilla
+            document.querySelectorAll('#sched-days input[type=checkbox]').forEach(cb => {{
+                cb.checked = sched.days.includes(cb.value);
+            }});
+            document.getElementById('sched-time').value = sched.time;
+        }}
+
         async function guardarHorario() {{
             const site = document.getElementById('sched-site').value;
             const time = document.getElementById('sched-time').value;
-            const days = Array.from(document.querySelectorAll('input[type=checkbox]:not(#update-image):checked')).map(cb => cb.value);
+            const days = Array.from(document.querySelectorAll('#sched-days input[type=checkbox]:checked')).map(cb => cb.value);
             const msg = document.getElementById('sched-msg');
             if (!days.length) {{ msg.textContent = '❌ Selecciona al menos un día'; msg.style.color='#ef4444'; return; }}
             msg.textContent = '⏳ Guardando...'; msg.style.color = '#f59e0b';
@@ -402,7 +432,9 @@ def dashboard():
                 }});
                 const data = await res.json();
                 if (data.status === 'updated') {{
-                    msg.textContent = '✅ Horario guardado. Se aplicará desde ahora.';
+                    msg.textContent = data.site === '__all__'
+                        ? '✅ Horario aplicado a TODOS los sitios.'
+                        : '✅ Horario guardado. Se aplicará desde ahora.';
                     msg.style.color = '#22c55e';
                     setTimeout(() => location.reload(), 1500);
                 }} else {{
@@ -709,6 +741,9 @@ def update_schedule(req: ScheduleRequest):
         raise HTTPException(status_code=400, detail=f"Días inválidos: {invalid}")
     if not req.days:
         raise HTTPException(status_code=400, detail="Debes seleccionar al menos un día")
+    if req.site_key == "__all__":
+        reschedule_all(req.days, req.publish_time)
+        return {"status": "updated", "site": "__all__", "days": req.days, "time": req.publish_time}
     if req.site_key not in SITES:
         raise HTTPException(status_code=404, detail=f"Sitio '{req.site_key}' no encontrado")
     reschedule(req.site_key, req.days, req.publish_time)
@@ -747,6 +782,17 @@ def reschedule(site_key: str, days: list, publish_time: str):
     schedule.clear()
     schedule_sites()
     print(f"[Scheduler] ✅ Horario actualizado: {days} @ {publish_time}")
+
+
+def reschedule_all(days: list, publish_time: str):
+    """Aplica el mismo horario a TODOS los sitios de una vez (parejo)."""
+    config = load_schedule_config()
+    for sk in SITES.keys():
+        config[sk] = {"publish_days": days, "publish_time": publish_time}
+    save_schedule_config(config)
+    schedule.clear()
+    schedule_sites()
+    print(f"[Scheduler] ✅ Horario aplicado a TODOS los sitios: {days} @ {publish_time}")
 
 
 def run_scheduler():

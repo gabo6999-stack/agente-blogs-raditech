@@ -18,11 +18,20 @@ def _get_profiled_prompt(niche: str, word_count: int, p: dict) -> str:
     angles = p.get("angles", [])
     categories = p.get("categories", {})
     cta = p.get("cta", "")
+    internal_links = p.get("internal_links", {})
 
     angles_str = "\n".join(f"- {a}" for a in angles)
     cats_str = "\n".join(f'- "{name}" → {desc}' for name, desc in categories.items())
+    links_str = "\n".join(f"- {url} — {desc}" for url, desc in internal_links.items()) or "(sin enlaces internos configurados)"
     cat_names = list(categories.keys())
     default_cat = cat_names[0] if cat_names else "Blog"
+    schema_example = (
+        '<script type="application/ld+json">'
+        '{"@context":"https://schema.org","@type":"FAQPage","mainEntity":'
+        '[{"@type":"Question","name":"¿Pregunta 1?","acceptedAnswer":{"@type":"Answer","text":"Respuesta 1."}},'
+        '{"@type":"Question","name":"¿Pregunta 2?","acceptedAnswer":{"@type":"Answer","text":"Respuesta 2."}}]}'
+        '</script>'
+    )
 
     return f"""Eres un experto redactor de contenido especializado en {niche}.
 
@@ -43,6 +52,13 @@ INSTRUCCIONES DE CONTENIDO:
 - Evita el relleno y las promesas vacías; el valor debe surgir del expertise demostrado
 - {cta}
 
+ENLACES OBLIGATORIOS (SEO/AEO):
+- INTERLINKS: incluye AL MENOS 3 enlaces internos contextuales dentro del texto, usando EXCLUSIVAMENTE las URLs de la lista de abajo (no inventes URLs), solo donde sean relevantes al tema. Formato: <a href="URL_ABSOLUTA">ancla descriptiva</a>.
+- LINKS EXTERNOS: incluye AL MENOS 2 enlaces a fuentes autorizadas y REALES que hayas verificado con web_search (estudios, plataformas oficiales, datos), con <a href="URL" target="_blank" rel="noopener">...</a>. Nunca inventes URLs ni cites fuentes que no existan.
+
+PÁGINAS INTERNAS DISPONIBLES PARA INTERLINKS (usa solo estas, las relevantes):
+{links_str}
+
 ÁNGULOS DE CONTENIDO QUE FUNCIONAN PARA ESTE NICHO:
 {angles_str}
 
@@ -52,7 +68,9 @@ ESTRUCTURA DEL ARTÍCULO:
 3. 4-6 secciones con subtítulos (H2/H3), con listas y ejemplos concretos
 4. Tabla comparativa o lista de pasos cuando aporte valor
 5. Conclusión con el CTA indicado (sutil, no agresivo)
-6. FAQ — 3 preguntas frecuentes que haría tu audiencia
+6. SECCIÓN FAQ OBLIGATORIA al final: <h2>Preguntas frecuentes</h2> seguido de AL MENOS 4 pares <h3>¿Pregunta?</h3><p>Respuesta concisa</p>
+7. Al FINAL del campo content incluye SIEMPRE el schema JSON-LD de la FAQ (con el mismo texto de las preguntas visibles, en texto plano). Formato exacto:
+   {schema_example}
 
 FORMATO DE RESPUESTA:
 Responde ÚNICAMENTE con un JSON válido con esta estructura exacta:
