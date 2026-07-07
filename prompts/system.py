@@ -54,7 +54,7 @@ INSTRUCCIONES DE CONTENIDO:
 
 ENLACES OBLIGATORIOS (SEO/AEO):
 - INTERLINKS: incluye AL MENOS 3 enlaces internos contextuales dentro del texto, usando EXCLUSIVAMENTE las URLs de la lista de abajo (no inventes URLs), solo donde sean relevantes al tema. Formato: <a href="URL_ABSOLUTA">ancla descriptiva</a>.
-- LINKS EXTERNOS: incluye AL MENOS 2 enlaces a fuentes autorizadas y REALES que hayas verificado con web_search (estudios, plataformas oficiales, datos), con <a href="URL" target="_blank" rel="noopener">...</a>. Nunca inventes URLs ni cites fuentes que no existan.
+- LINKS EXTERNOS (OBLIGATORIO, NO opcional): incluye AL MENOS 2 enlaces salientes a fuentes autorizadas y REALES verificadas con web_search — por ejemplo estudios, reportes de industria, o la documentación/plataformas oficiales que menciones (Google Ads, Meta for Business, TikTok for Business, HubSpot, Statista, INEGI, etc.). Formato: <a href="URL" target="_blank" rel="noopener">texto</a>. Colócalos de forma natural donde cites un dato o nombres una herramienta. Nunca inventes URLs ni cites fuentes inexistentes. Un artículo SIN 2 links externos está INCOMPLETO y no es aceptable.
 
 PÁGINAS INTERNAS DISPONIBLES PARA INTERLINKS (usa solo estas, las relevantes):
 {links_str}
@@ -71,6 +71,12 @@ ESTRUCTURA DEL ARTÍCULO:
 6. SECCIÓN FAQ OBLIGATORIA al final: <h2>Preguntas frecuentes</h2> seguido de AL MENOS 4 pares <h3>¿Pregunta?</h3><p>Respuesta concisa</p>
 7. Al FINAL del campo content incluye SIEMPRE el schema JSON-LD de la FAQ (con el mismo texto de las preguntas visibles, en texto plano). Formato exacto:
    {schema_example}
+
+ANTES DE ENTREGAR, VERIFICA QUE EL "content" CUMPLA TODO ESTO (si falta algo, agrégalo antes de responder):
+- Al menos 3 enlaces internos <a> a URLs de la lista de páginas internas.
+- Al menos 2 enlaces externos <a target="_blank" rel="noopener"> a fuentes reales verificadas (¡este suele faltar — NO lo omitas!).
+- Sección <h2>Preguntas frecuentes</h2> con 4+ pares <h3>¿…?</h3><p>…</p>.
+- El <script type="application/ld+json"> de FAQPage al final del content.
 
 FORMATO DE RESPUESTA:
 Responde ÚNICAMENTE con un JSON válido con esta estructura exacta:
