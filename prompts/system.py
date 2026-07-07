@@ -1,4 +1,85 @@
-def get_system_prompt(niche: str, word_count: int) -> str:
+def get_system_prompt(niche: str, word_count: int, profile: dict = None) -> str:
+    """
+    Devuelve el system prompt para generar el blog.
+    - Si `profile` es None -> prompt B2B de radiología (comportamiento original de raditech).
+    - Si `profile` viene dado -> prompt genérico construido a partir del perfil del sitio
+      (audiencia, objetivo, tono, ángulos, categorías, CTA).
+    """
+    if profile:
+        return _get_profiled_prompt(niche, word_count, profile)
+    return _get_raditech_prompt(niche, word_count)
+
+
+def _get_profiled_prompt(niche: str, word_count: int, p: dict) -> str:
+    brand = p.get("brand", "")
+    audience = p.get("audience", "")
+    objective = p.get("objective", "")
+    tone = p.get("tone", "")
+    angles = p.get("angles", [])
+    categories = p.get("categories", {})
+    cta = p.get("cta", "")
+
+    angles_str = "\n".join(f"- {a}" for a in angles)
+    cats_str = "\n".join(f'- "{name}" → {desc}' for name, desc in categories.items())
+    cat_names = list(categories.keys())
+    default_cat = cat_names[0] if cat_names else "Blog"
+
+    return f"""Eres un experto redactor de contenido especializado en {niche}.
+
+Escribes para {brand}.
+
+TU AUDIENCIA:
+{audience}
+
+OBJETIVO DEL CONTENIDO:
+{objective}
+
+INSTRUCCIONES DE CONTENIDO:
+- Longitud objetivo: {word_count} palabras
+- Idioma: español (México)
+- Tono: {tone}
+- Usa web_search para investigar datos, cifras y tendencias actualizadas antes de escribir
+- Aporta valor real y accionable: pasos, ejemplos, checklists y criterios de decisión
+- Evita el relleno y las promesas vacías; el valor debe surgir del expertise demostrado
+- {cta}
+
+ÁNGULOS DE CONTENIDO QUE FUNCIONAN PARA ESTE NICHO:
+{angles_str}
+
+ESTRUCTURA DEL ARTÍCULO:
+1. Título principal (H1) — claro, con la keyword principal, orientado a beneficio
+2. Introducción — plantea el problema o la oportunidad del lector en 2-3 párrafos
+3. 4-6 secciones con subtítulos (H2/H3), con listas y ejemplos concretos
+4. Tabla comparativa o lista de pasos cuando aporte valor
+5. Conclusión con el CTA indicado (sutil, no agresivo)
+6. FAQ — 3 preguntas frecuentes que haría tu audiencia
+
+FORMATO DE RESPUESTA:
+Responde ÚNICAMENTE con un JSON válido con esta estructura exacta:
+{{
+  "title": "Título del artículo",
+  "slug": "titulo-del-articulo-en-slug",
+  "content": "Contenido HTML completo del artículo",
+  "excerpt": "Resumen de 150 caracteres máximo",
+  "rank_math_title": "Meta title SEO (60 caracteres máximo)",
+  "rank_math_description": "Meta description SEO (160 caracteres máximo)",
+  "rank_math_focus_keyword": "keyword principal",
+  "tags": ["tag1", "tag2", "tag3"],
+  "unsplash_query": "query en inglés para buscar imagen relacionada (2-3 palabras)",
+  "category": "nombre exacto de la categoría más adecuada para este artículo"
+}}
+
+CATEGORÍAS DISPONIBLES — elige UNA según el tema principal del artículo:
+{cats_str}
+
+Si ninguna encaja perfectamente, usa "{default_cat}".
+
+IMPORTANTE: El campo "content" debe ser HTML válido con etiquetas <h2>, <h3>, <p>, <ul>, <strong>, <table>.
+No incluyas el H1 dentro del content, solo el cuerpo del artículo.
+No agregues texto fuera del JSON."""
+
+
+def _get_raditech_prompt(niche: str, word_count: int) -> str:
     return f"""Eres un experto redactor de contenido B2B especializado en {niche}.
 
 Tu audiencia son tomadores de decisión en el sector salud: directores médicos, jefes de radiología,

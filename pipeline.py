@@ -141,18 +141,19 @@ def run_pipeline(site_key: str, topic: str = None):
             print(f"\n[Pipeline] ✅ Blog publicado: {post.get('link')}")
 
             notify_nexus(
-                action="Publicó un blog (Raditech)",
+                action=f"Publicó un blog ({site_key})",
                 detail=post.get("title", {}).get("rendered", "") or topic,
                 url=post.get("link", ""),
             )
 
-            # 7. Optimizar con agente SEO
-            notify_seo_agent(
-                post_id=post.get("id"),
-                title=post.get("title", {}).get("rendered", ""),
-                content=blog_data.get("content", ""),
-                url=post.get("link", "")
-            )
+            # 7. Optimizar con agente SEO (solo raditech tiene endpoint SEO propio de su nicho)
+            if site_key == "raditech":
+                notify_seo_agent(
+                    post_id=post.get("id"),
+                    title=post.get("title", {}).get("rendered", ""),
+                    content=blog_data.get("content", ""),
+                    url=post.get("link", "")
+                )
         else:
             agent_status["last_error"] = "Post creation failed"
             log_post(site_key, topic, None, success=False, error="Post creation failed")

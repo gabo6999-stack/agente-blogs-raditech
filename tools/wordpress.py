@@ -44,6 +44,33 @@ def get_wp_headers(site_key: str) -> tuple[str, dict]:
     return wp_url, headers
 
 
+def set_rankmath_meta(wp_url: str, headers: dict, post_id: int, blog_data: dict) -> bool:
+    """
+    Persiste el meta de Rank Math vía su endpoint propio (rankmath/v1/updateMeta).
+    El campo `meta` de /wp/v2 NO persiste rank_math_* (Rank Math lo ignora en silencio),
+    por eso usamos este endpoint. Requiere que el usuario autenticado tenga edit_post.
+    """
+    meta = {
+        "rank_math_title": blog_data.get("rank_math_title", blog_data.get("title", "")),
+        "rank_math_description": blog_data.get("rank_math_description", ""),
+        "rank_math_focus_keyword": blog_data.get("rank_math_focus_keyword", ""),
+    }
+    try:
+        r = requests.post(
+            f"{wp_url}/wp-json/rankmath/v1/updateMeta",
+            headers=headers,
+            json={"objectID": post_id, "objectType": "post", "meta": meta},
+            timeout=15,
+        )
+        if r.status_code == 200:
+            print(f"[WP] Rank Math meta (updateMeta) guardado en post {post_id}")
+            return True
+        print(f"[WP] updateMeta no disponible ({r.status_code}); se dejó el PATCH estándar")
+    except Exception as e:
+        print(f"[WP] Error en updateMeta: {e}")
+    return False
+
+
 def publish_post(site_key: str, blog_data: dict, featured_media_id: int = None) -> dict | None:
     """
     Publica el post en WordPress con metadatos de Rank Math.
@@ -114,6 +141,9 @@ def publish_post(site_key: str, blog_data: dict, featured_media_id: int = None) 
             print(f"[WP] Rank Math meta guardado en post {post['id']}")
         else:
             print(f"[WP] Advertencia: rank_math meta no guardado ({patch.status_code})")
+
+        # Persistencia fiable de rank_math vía endpoint propio de Rank Math
+        set_rankmath_meta(wp_url, headers, post["id"], blog_data)
 
         return post
 
@@ -247,6 +277,7 @@ def update_post(site_key: str, post_id: int, blog_data: dict, featured_media_id:
         response.raise_for_status()
         post = response.json()
         print(f"[WP] Post actualizado: {post['link']}")
+        set_rankmath_meta(wp_url, headers, post_id, blog_data)
         return post
     except Exception as e:
         print(f"[WP] Error actualizando post: {e}")

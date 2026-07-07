@@ -111,7 +111,7 @@ def generate_blog(site_key: str, topic: str) -> dict:
     site = SITES[site_key]
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
-    system_prompt = get_system_prompt(site["niche"], site["post_length"])
+    system_prompt = get_system_prompt(site["niche"], site["post_length"], site.get("prompt_profile"))
 
     user_message = f"""Escribe un artículo de blog completo y optimizado para SEO sobre: "{topic}"
 
