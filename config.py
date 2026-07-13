@@ -92,6 +92,69 @@ SITES = {
             },
         },
     },
+    "cmlc": {
+        "wp_url": os.getenv("SITE3_WP_URL"),
+        "wp_user": os.getenv("SITE3_WP_USER"),
+        "wp_password": os.getenv("SITE3_WP_PASSWORD"),
+        "category": "Radiología e Imagen",
+        "niche": "radiología e imagenología diagnóstica para pacientes (rayos X, tomografía, ultrasonido, mastografía) en Mazatlán, Sinaloa",
+        "language": "es",
+        "keywords_seed": [
+            "historia de la radiología", "rayos x Mazatlán", "tomografía Mazatlán",
+            "estudios de imagen Mazatlán", "ultrasonido Mazatlán", "mastografía Mazatlán",
+            "rayos x a domicilio", "preparación para tomografía", "qué es una densitometría ósea",
+            "radiología e imagen", "panorámica dental Mazatlán", "electrocardiograma Mazatlán",
+        ],
+        "publish_days": ["wednesday"],
+        "publish_time": "10:00",
+        "post_length": 1300,
+        "unsplash_fallback": "vintage x-ray machine radiology history",
+        "prompt_profile": {
+            "brand": "Centro Médico Las Conchas",
+            "audience": (
+                "pacientes y público general en Mazatlán y la región que necesitan estudios de "
+                "radiología e imagen (rayos X, tomografía, ultrasonido, mastografía, densitometría) "
+                "por indicación médica o revisión preventiva, sin conocimientos técnicos de medicina"
+            ),
+            "objective": (
+                "generar contenido de divulgación confiable sobre radiología e imagenología diagnóstica "
+                "que eduque al paciente, reduzca su ansiedad ante los estudios, y posicione al Centro "
+                "Médico Las Conchas (gabinete del Dr. Pedro Gavito) como la opción de confianza en "
+                "Mazatlán para agendar su estudio"
+            ),
+            "tone": (
+                "cercano, cálido y claro, como lo explicaría el propio médico al paciente; sin "
+                "tecnicismos innecesarios (o explicados en cuanto se usan), en español de México; "
+                "empático, nunca alarmista"
+            ),
+            "angles": [
+                "historia y evolución de la radiología y las técnicas de imagen",
+                "qué esperar en un estudio específico (rayos X, tomografía, ultrasonido, mastografía) paso a paso",
+                "cómo prepararse antes de un estudio (ayuno, ropa, indicaciones)",
+                "diferencias entre modalidades de imagen y cuándo el médico pide cada una",
+                "mitos y verdades sobre la radiación en estudios de imagen",
+                "densitometría ósea y mastografía: por qué son clave en la prevención",
+                "servicio de rayos X a domicilio: para quién es y cómo funciona",
+            ],
+            "categories": {
+                "Radiología e Imagen": (
+                    "todo el contenido de divulgación sobre estudios de radiología e imagenología "
+                    "diagnóstica del Centro Médico Las Conchas"
+                ),
+            },
+            "cta": (
+                "cierre invitando a agendar su estudio llamando al 669 990 2288 / 669 269 6255 o "
+                "visitando el Centro Médico Las Conchas en Plaza Las Conchas, Mazatlán"
+            ),
+            "internal_links": {
+                "https://centromedicolasconchas.com/": "Agenda tu estudio en Centro Médico Las Conchas",
+                "https://centromedicolasconchas.com/#servicios": "Estudios de radiología e imagen que realizamos",
+                "https://centromedicolasconchas.com/#tomografia": "Tomografía multicorte y reconstrucción 3D",
+                "https://centromedicolasconchas.com/#nosotros": "Conoce al Dr. Pedro Gavito y el Centro Médico Las Conchas",
+                "https://centromedicolasconchas.com/#ubicacion": "Ubicación y cómo llegar a Plaza Las Conchas",
+            },
+        },
+    },
 }
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
