@@ -1,0 +1,903 @@
+{
+  "site": "propertyledger",
+  "domain": "propertyledger.us",
+  "market": {
+    "location_code": 2840,
+    "language_code": "en"
+  },
+  "generated": "2026-07-20",
+  "source": "DataForSEO Labs (research_propertyledger.py)",
+  "research_cost_usd": 1.473,
+  "competitors_measured": [
+    {
+      "domain": "doorloop.com",
+      "ranked_kw_top20": 1000,
+      "sum_volume_top20": 4216380
+    },
+    {
+      "domain": "appfolio.com",
+      "ranked_kw_top20": 1000,
+      "sum_volume_top20": 1593860
+    },
+    {
+      "domain": "hemlane.com",
+      "ranked_kw_top20": 1000,
+      "sum_volume_top20": 1422260
+    },
+    {
+      "domain": "buildium.com",
+      "ranked_kw_top20": 1000,
+      "sum_volume_top20": 1264260
+    },
+    {
+      "domain": "stessa.com",
+      "ranked_kw_top20": 1000,
+      "sum_volume_top20": 1093210
+    },
+    {
+      "domain": "baselane.com",
+      "ranked_kw_top20": 1000,
+      "sum_volume_top20": 811670
+    },
+    {
+      "domain": "rentecdirect.com",
+      "ranked_kw_top20": 1000,
+      "sum_volume_top20": 710460
+    },
+    {
+      "domain": "apmhelp.com",
+      "ranked_kw_top20": 1000,
+      "sum_volume_top20": 282380
+    },
+    {
+      "domain": "propertymatics.com",
+      "ranked_kw_top20": 0,
+      "sum_volume_top20": 0
+    }
+  ],
+  "notes": [
+    "Baseline: propertyledger.us rankeaba en 0 keywords al medir (dominio nuevo).",
+    "content_gap vs doorloop = ruido (doorloop es software PM full, rankea por todo el universo PM/real estate genérico, no accounting). Se usa keyword_universe de semillas de accounting como señal limpia.",
+    "'trust accounting' bruto (5400) está dominado por trust accounting LEGAL (abogados/IOLTA). Property Ledger es PM/HOA -> targetear variantes real-estate/PM, no genéricas/legales.",
+    "'property management accounting software' (1300) es intención de SOFTWARE (quieren AppFolio/Buildium), no servicio -> no targetear en páginas de servicio; solo abordar como comparación/educación.",
+    "Competidores todos capped a 1000 kw (gigantes). Directo de servicio = apmhelp.com (282K)."
+  ],
+  "keyword_banks": {
+    "informational": [
+      {
+        "keyword": "trust accounting",
+        "volume": 5400,
+        "kd": 0,
+        "variants": 6
+      },
+      {
+        "keyword": "employee benefit trust accounting",
+        "volume": 1000,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting definition",
+        "volume": 880,
+        "kd": 20,
+        "variants": 1
+      },
+      {
+        "keyword": "accounting in property management",
+        "volume": 590,
+        "kd": 0,
+        "variants": 5
+      },
+      {
+        "keyword": "hoa accounting",
+        "volume": 480,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "bookkeeping for property management",
+        "volume": 320,
+        "kd": 0,
+        "variants": 3
+      },
+      {
+        "keyword": "owner statements",
+        "volume": 260,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "real estate trust accounting",
+        "volume": 210,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting example",
+        "volume": 170,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "revocable trust accounting",
+        "volume": 140,
+        "kd": 22,
+        "variants": 1
+      },
+      {
+        "keyword": "irrevocable trust accounting",
+        "volume": 110,
+        "kd": 19,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting law",
+        "volume": 70,
+        "kd": 8,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting for dummies",
+        "volume": 50,
+        "kd": 16,
+        "variants": 1
+      },
+      {
+        "keyword": "trust fund accounting",
+        "volume": 50,
+        "kd": 7,
+        "variants": 2
+      },
+      {
+        "keyword": "reserve fund accounting for hoa",
+        "volume": 50,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "what is outsourced accounting",
+        "volume": 50,
+        "kd": 18,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting rules",
+        "volume": 40,
+        "kd": 1,
+        "variants": 1
+      },
+      {
+        "keyword": "quickbooks trust accounting",
+        "volume": 40,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "hoa accounting jobs",
+        "volume": 40,
+        "kd": 0,
+        "variants": 1
+      }
+    ],
+    "commercial": [
+      {
+        "keyword": "lawyer trust accounting",
+        "volume": 4400,
+        "kd": 4,
+        "variants": 3
+      },
+      {
+        "keyword": "accounting outsourced services",
+        "volume": 2900,
+        "kd": 7,
+        "variants": 4
+      },
+      {
+        "keyword": "accounting software for property management",
+        "volume": 1300,
+        "kd": 17,
+        "variants": 6
+      },
+      {
+        "keyword": "property management bookkeeping software",
+        "volume": 1300,
+        "kd": 39,
+        "variants": 1
+      },
+      {
+        "keyword": "accounting outsourced",
+        "volume": 1300,
+        "kd": 3,
+        "variants": 2
+      },
+      {
+        "keyword": "attorney trust accounting",
+        "volume": 880,
+        "kd": 16,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting company",
+        "volume": 720,
+        "kd": 18,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting companies",
+        "volume": 720,
+        "kd": 1,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting firms",
+        "volume": 720,
+        "kd": 1,
+        "variants": 2
+      },
+      {
+        "keyword": "outsourced accounting services near me",
+        "volume": 720,
+        "kd": 7,
+        "variants": 1
+      },
+      {
+        "keyword": "hoa accounting software",
+        "volume": 590,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "outsourced finance and accounting",
+        "volume": 480,
+        "kd": 10,
+        "variants": 1
+      },
+      {
+        "keyword": "hoa accounting services",
+        "volume": 320,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "outsourced accounting services for small business",
+        "volume": 320,
+        "kd": 32,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting services for small businesses",
+        "volume": 320,
+        "kd": 10,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting program",
+        "volume": 260,
+        "kd": 9,
+        "variants": 1
+      },
+      {
+        "keyword": "legal trust accounting software",
+        "volume": 260,
+        "kd": 9,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting software",
+        "volume": 260,
+        "kd": 9,
+        "variants": 2
+      },
+      {
+        "keyword": "outsourced accounting bookkeeping services",
+        "volume": 260,
+        "kd": 2,
+        "variants": 3
+      },
+      {
+        "keyword": "ignite spot outsourced accounting",
+        "volume": 260,
+        "kd": 22,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting real estate",
+        "volume": 210,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "client trust accounting",
+        "volume": 210,
+        "kd": 18,
+        "variants": 1
+      },
+      {
+        "keyword": "living trust accounting",
+        "volume": 210,
+        "kd": 21,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting requirements",
+        "volume": 210,
+        "kd": 16,
+        "variants": 1
+      },
+      {
+        "keyword": "property management accounting jobs",
+        "volume": 170,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "trust accounting services",
+        "volume": 140,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting philippines",
+        "volume": 140,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting and bookkeeping",
+        "volume": 140,
+        "kd": 0,
+        "variants": 3
+      },
+      {
+        "keyword": "best outsourced accounting services",
+        "volume": 140,
+        "kd": 3,
+        "variants": 1
+      },
+      {
+        "keyword": "property management trust accounting",
+        "volume": 110,
+        "kd": 3,
+        "variants": 1
+      },
+      {
+        "keyword": "trust ledger accounting",
+        "volume": 110,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "special needs trust accounting",
+        "volume": 110,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting solutions",
+        "volume": 110,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "best accounting software for property management",
+        "volume": 90,
+        "kd": 8,
+        "variants": 3
+      },
+      {
+        "keyword": "property management accounting services",
+        "volume": 90,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "property management bookkeeping services",
+        "volume": 90,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "investment trust accounting",
+        "volume": 90,
+        "kd": 15,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting income",
+        "volume": 90,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced small business accounting",
+        "volume": 90,
+        "kd": 9,
+        "variants": 2
+      },
+      {
+        "keyword": "outsourced accounting india",
+        "volume": 90,
+        "kd": 5,
+        "variants": 1
+      },
+      {
+        "keyword": "accounting jobs outsourced",
+        "volume": 90,
+        "kd": 4,
+        "variants": 2
+      },
+      {
+        "keyword": "outsourced nonprofit accounting",
+        "volume": 90,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "outsourced finance and accounting services",
+        "volume": 90,
+        "kd": 5,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting for law firms",
+        "volume": 70,
+        "kd": 7,
+        "variants": 2
+      },
+      {
+        "keyword": "family trust accounting",
+        "volume": 70,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "clio trust accounting software",
+        "volume": 70,
+        "kd": 21,
+        "variants": 1
+      },
+      {
+        "keyword": "legal trust accounting",
+        "volume": 70,
+        "kd": 2,
+        "variants": 1
+      },
+      {
+        "keyword": "free trust accounting software for trustees",
+        "volume": 70,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "best hoa accounting software",
+        "volume": 70,
+        "kd": 5,
+        "variants": 2
+      },
+      {
+        "keyword": "hoa accounting services near me",
+        "volume": 70,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting services in india",
+        "volume": 70,
+        "kd": 9,
+        "variants": 2
+      },
+      {
+        "keyword": "outsourced restaurant accounting",
+        "volume": 70,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "property management company accounting",
+        "volume": 50,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "accounting for property management companies",
+        "volume": 50,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "estate and trust accounting",
+        "volume": 50,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "trust accounting software for trustees",
+        "volume": 50,
+        "kd": 3,
+        "variants": 1
+      },
+      {
+        "keyword": "hoa accounting software free",
+        "volume": 50,
+        "kd": 8,
+        "variants": 2
+      },
+      {
+        "keyword": "outsourced accounting services philippines",
+        "volume": 50,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting for startups",
+        "volume": 50,
+        "kd": 7,
+        "variants": 1
+      },
+      {
+        "keyword": "nonprofit outsourced accounting services",
+        "volume": 50,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting for small businesses",
+        "volume": 50,
+        "kd": 15,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting team",
+        "volume": 50,
+        "kd": 4,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting services for startups",
+        "volume": 50,
+        "kd": 4,
+        "variants": 1
+      },
+      {
+        "keyword": "lawyer trust accounting software",
+        "volume": 40,
+        "kd": 6,
+        "variants": 2
+      },
+      {
+        "keyword": "trust accounting quickbooks",
+        "volume": 40,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "attorney trust accounting software",
+        "volume": 40,
+        "kd": 6,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting department",
+        "volume": 40,
+        "kd": 7,
+        "variants": 1
+      },
+      {
+        "keyword": "outsourced accounting work",
+        "volume": 40,
+        "kd": 1,
+        "variants": 1
+      }
+    ],
+    "transactional": [
+      {
+        "keyword": "accounting income trust",
+        "volume": 90,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting sample report",
+        "volume": 50,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting template excel",
+        "volume": 50,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "florida bar trust accounting rules",
+        "volume": 50,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting requirements california",
+        "volume": 40,
+        "kd": 0,
+        "variants": 2
+      },
+      {
+        "keyword": "accounting for a trust",
+        "volume": 40,
+        "kd": 0,
+        "variants": 1
+      },
+      {
+        "keyword": "trust accounting template",
+        "volume": 40,
+        "kd": 0,
+        "variants": 1
+      }
+    ]
+  },
+  "blog_queue": [
+    {
+      "order": 1,
+      "topic": "What is trust accounting in property management? A plain-English guide with examples",
+      "primary_keyword": "what is trust accounting",
+      "measured_volume": 4400,
+      "measured_kd": 0,
+      "suggested_slug": "trust-accounting-explainer",
+      "status": "queued"
+    },
+    {
+      "order": 2,
+      "topic": "HOA accounting basics: a guide for board members and treasurers",
+      "primary_keyword": "hoa accounting",
+      "measured_volume": 480,
+      "measured_kd": 0,
+      "suggested_slug": "hoa-accounting-basics",
+      "status": "queued"
+    },
+    {
+      "order": 3,
+      "topic": "Property management bookkeeping vs. accounting: what's the difference (and what you need)",
+      "primary_keyword": "property management bookkeeping",
+      "measured_volume": 320,
+      "measured_kd": 0,
+      "suggested_slug": "bookkeeping-vs-accounting",
+      "status": "queued"
+    },
+    {
+      "order": 4,
+      "topic": "Real estate trust accounting: the rules every property manager must follow",
+      "primary_keyword": "real estate trust accounting",
+      "measured_volume": 210,
+      "measured_kd": 0,
+      "suggested_slug": "real-estate-trust-accounting-rules",
+      "status": "queued"
+    },
+    {
+      "order": 5,
+      "topic": "HOA reserve fund accounting: how to track, fund and report reserves correctly",
+      "primary_keyword": "reserve fund accounting for hoa",
+      "measured_volume": 50,
+      "measured_kd": 0,
+      "suggested_slug": "hoa-reserve-fund-accounting",
+      "status": "queued"
+    },
+    {
+      "order": 6,
+      "topic": "Trust accounting rules for property managers: a state-by-state overview (Florida focus)",
+      "primary_keyword": "trust accounting rules",
+      "measured_volume": 40,
+      "measured_kd": 1,
+      "suggested_slug": "trust-accounting-rules-by-state",
+      "status": "queued"
+    },
+    {
+      "order": 7,
+      "topic": "Commingling of funds: the trust accounting mistake that gets property managers in trouble",
+      "primary_keyword": "trust accounting law",
+      "measured_volume": 70,
+      "measured_kd": 8,
+      "suggested_slug": "commingling-of-funds",
+      "status": "queued"
+    },
+    {
+      "order": 8,
+      "topic": "Security deposit accounting for property managers: compliance and best practices",
+      "primary_keyword": "real estate trust accounting",
+      "measured_volume": 210,
+      "measured_kd": 0,
+      "suggested_slug": "security-deposit-accounting",
+      "status": "queued"
+    },
+    {
+      "order": 9,
+      "topic": "How to do trust accounting in QuickBooks for property management",
+      "primary_keyword": "quickbooks trust accounting",
+      "measured_volume": 40,
+      "measured_kd": 0,
+      "suggested_slug": "quickbooks-trust-accounting",
+      "status": "queued"
+    },
+    {
+      "order": 10,
+      "topic": "Setting up a property management chart of accounts the right way",
+      "primary_keyword": "property management bookkeeping",
+      "measured_volume": 320,
+      "measured_kd": 0,
+      "suggested_slug": "property-management-chart-of-accounts",
+      "status": "queued"
+    },
+    {
+      "order": 11,
+      "topic": "Free trust accounting template + sample owner statement (and how to use them)",
+      "primary_keyword": "trust accounting template excel",
+      "measured_volume": 50,
+      "measured_kd": 0,
+      "suggested_slug": "trust-accounting-template",
+      "status": "queued"
+    },
+    {
+      "order": 12,
+      "topic": "5 signs your property management company needs professional accounting help",
+      "primary_keyword": "what is outsourced accounting",
+      "measured_volume": 50,
+      "measured_kd": 18,
+      "suggested_slug": "signs-you-need-accounting-help",
+      "status": "queued"
+    },
+    {
+      "order": 13,
+      "topic": "What is outsourced accounting and how does it work for property managers?",
+      "primary_keyword": "what is outsourced accounting",
+      "measured_volume": 50,
+      "measured_kd": 18,
+      "suggested_slug": "what-is-outsourced-accounting",
+      "status": "queued"
+    },
+    {
+      "order": 14,
+      "topic": "HOA & condo financial statements: what boards should review every month",
+      "primary_keyword": "hoa accounting",
+      "measured_volume": 480,
+      "measured_kd": 0,
+      "suggested_slug": "hoa-condo-financial-statements",
+      "status": "queued"
+    },
+    {
+      "order": 15,
+      "topic": "1099 filing for property managers: vendor payments and owner distributions explained",
+      "primary_keyword": "bookkeeping for property management",
+      "measured_volume": 320,
+      "measured_kd": 0,
+      "suggested_slug": "1099-filing-property-managers",
+      "status": "queued"
+    }
+  ],
+  "page_optimization": [
+    {
+      "url": "https://propertyledger.us/",
+      "type": "page",
+      "current_focus": "accounting for property management",
+      "recommended_focus": "accounting for property management",
+      "secondary": [
+        "outsourced accounting firm",
+        "property management bookkeeping"
+      ],
+      "note": "Mantener focus (KD0). Enriquecer con el ángulo 'outsourced accounting firm' (KD1-7, 720-2900 vol) que hoy no se captura. Interlink a los 2 servicios + nuevos blogs.",
+      "recommended_focus_volume": 590,
+      "recommended_focus_kd": 0
+    },
+    {
+      "url": "https://propertyledger.us/monthly-accounting/",
+      "type": "page",
+      "current_focus": "property management accounting service",
+      "recommended_focus": "property management accounting service",
+      "secondary": [
+        "property management bookkeeping",
+        "monthly financial statements property management"
+      ],
+      "note": "Diferenciar de /property-management-accounting/: esta es el SERVICIO recurrente mensual (close, statements, AP/AR). Añadir 'bookkeeping' como secundaria (KD0, 320).",
+      "recommended_focus_volume": 90,
+      "recommended_focus_kd": 0
+    },
+    {
+      "url": "https://propertyledger.us/property-management-accounting/",
+      "type": "page",
+      "current_focus": "accounting for property management companies",
+      "recommended_focus": "property management trust accounting",
+      "secondary": [
+        "real estate trust accounting",
+        "owner statements",
+        "commingling"
+      ],
+      "note": "RIESGO DE CANIBALIZACIÓN con home. Reposicionar esta página al ángulo TRUST/owner-funds/compliance (que ya enfatiza) para separarla del home. Focus -> trust accounting PM.",
+      "recommended_focus_volume": 110,
+      "recommended_focus_kd": 3
+    },
+    {
+      "url": "https://propertyledger.us/contact/",
+      "type": "page",
+      "current_focus": "free accounting consultation",
+      "recommended_focus": "free accounting consultation",
+      "secondary": [
+        "property management accounting consultation"
+      ],
+      "note": "OK. Meta description con CTA + teléfono. Interlink desde todos los blogs (ya lo hace el prompt).",
+      "recommended_focus_volume": null,
+      "recommended_focus_kd": null
+    },
+    {
+      "url": "NUEVA: https://propertyledger.us/hoa-condo-accounting/",
+      "type": "page-new",
+      "current_focus": null,
+      "recommended_focus": "hoa accounting services",
+      "secondary": [
+        "hoa accounting",
+        "condo association accounting",
+        "hoa accounting software"
+      ],
+      "note": "GAP COMERCIAL claro: 'hoa accounting services' (KD0, 320) + 'hoa accounting' (KD0, 480) sin página dedicada. Alta relevancia + KD0. Recomendado crear landing HOA/Condo.",
+      "recommended_focus_volume": 320,
+      "recommended_focus_kd": 0
+    },
+    {
+      "url": "https://propertyledger.us/property-management-trust-accounting/",
+      "type": "post",
+      "current_focus": "property management trust accounting",
+      "recommended_focus": "property management trust accounting",
+      "secondary": [
+        "real estate trust accounting"
+      ],
+      "note": "Interlink al nuevo explainer 'what is trust accounting' y a 'trust accounting rules by state'. Pilar del cluster trust.",
+      "recommended_focus_volume": 110,
+      "recommended_focus_kd": 3
+    },
+    {
+      "url": "https://propertyledger.us/owner-statements-explained/",
+      "type": "post",
+      "current_focus": "owner statements",
+      "recommended_focus": "owner statements",
+      "secondary": [
+        "owner distributions"
+      ],
+      "note": "Interlink al template/sample owner statement (blog #11) y a HOA/condo financial statements.",
+      "recommended_focus_volume": 260,
+      "recommended_focus_kd": 0
+    },
+    {
+      "url": "https://propertyledger.us/property-management-financial-statements/",
+      "type": "post",
+      "current_focus": "property management financial statements",
+      "recommended_focus": "property management financial statements",
+      "secondary": [
+        "hoa condo financial statements"
+      ],
+      "note": "Interlink al nuevo 'HOA & condo financial statements'. Ya bien optimizado (84/100).",
+      "recommended_focus_volume": 30,
+      "recommended_focus_kd": 0
+    },
+    {
+      "url": "https://propertyledger.us/month-end-closing-checklist/",
+      "type": "post",
+      "current_focus": "month-end closing checklist",
+      "recommended_focus": "month-end closing checklist",
+      "secondary": [
+        "property management chart of accounts"
+      ],
+      "note": "Interlink al 'chart of accounts' (blog #10). Ya bien optimizado (85/100).",
+      "recommended_focus_volume": null,
+      "recommended_focus_kd": null
+    },
+    {
+      "url": "https://propertyledger.us/in-house-bookkeeper-vs-outsourced-accounting-property-management/",
+      "type": "post",
+      "current_focus": "outsourced property management accounting",
+      "recommended_focus": "outsourced property management accounting",
+      "secondary": [
+        "what is outsourced accounting",
+        "outsourced accounting firm"
+      ],
+      "note": "Post #109 (ya optimizado a mano). Interlink a '5 signs you need help' y 'what is outsourced accounting'.",
+      "recommended_focus_volume": 10,
+      "recommended_focus_kd": null
+    }
+  ]
+}

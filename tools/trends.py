@@ -1,6 +1,35 @@
+import json
+import os
 import random
 from pytrends.request import TrendReq
 from config import SITES
+
+# Cola de temas curada (DataForSEO). Si existe content_cache/<site_key>.json con
+# un "blog_queue", el agente publica de ahí en orden (temas medidos por volumen/KD)
+# en vez de tendencias. Cuando se agota, cae de nuevo a Google Trends.
+_QUEUE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "content_cache")
+
+
+def get_queued_topic(site_key: str, used_topics: list[str]) -> str | None:
+    """Siguiente tema de la cola curada que no se haya publicado. None si no hay
+    cola o ya se agotó."""
+    path = os.path.join(_QUEUE_DIR, f"{site_key}.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            cache = json.load(f)
+    except Exception as e:
+        print(f"[Queue] No se pudo leer {path}: {e}")
+        return None
+    used = set(used_topics)
+    for entry in sorted(cache.get("blog_queue", []), key=lambda e: e.get("order", 0)):
+        topic = entry.get("topic")
+        if topic and topic not in used:
+            print(f"[Queue] {site_key}: tema #{entry.get('order')} de la cola -> {topic}")
+            return topic
+    print(f"[Queue] {site_key}: cola agotada, usando tendencias")
+    return None
 
 
 def get_trending_topics(site_key: str) -> list[str]:
@@ -48,7 +77,12 @@ def get_trending_topics(site_key: str) -> list[str]:
 def pick_topic(site_key: str, used_topics: list[str] = []) -> str:
     """
     Selecciona el tema más relevante que no haya sido usado recientemente.
+    Prioridad: cola curada (DataForSEO) -> Google Trends -> keyword seed.
     """
+    queued = get_queued_topic(site_key, used_topics)
+    if queued:
+        return queued
+
     topics = get_trending_topics(site_key)
     
     for topic in topics:
