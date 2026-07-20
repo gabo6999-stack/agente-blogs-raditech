@@ -216,11 +216,17 @@ SITES = {
                 "propertyledger.us/contact or call (954) 261-1022"
             ),
             "internal_links": {
+                # Páginas de servicio
                 "https://propertyledger.us/": "Property Ledger Solutions — home",
                 "https://propertyledger.us/monthly-accounting/": "Monthly Accounting service",
                 "https://propertyledger.us/property-management-accounting/": "Property Management Trust Accounting service",
                 "https://propertyledger.us/hoa-condo-accounting/": "HOA & Condo Association Accounting service",
                 "https://propertyledger.us/contact/": "Schedule a free consultation",
+                # Blogs pilar (para cross-linking del cluster)
+                "https://propertyledger.us/what-is-trust-accounting-property-management-guide/": "What is trust accounting in property management (guide)",
+                "https://propertyledger.us/property-management-trust-accounting/": "Property management trust accounting: reconciliation guide",
+                "https://propertyledger.us/hoa-accounting-basics-guide-board-members-treasurers/": "HOA accounting basics for boards & treasurers",
+                "https://propertyledger.us/property-management-financial-statements/": "Property management financial statements explained",
             },
         },
     },

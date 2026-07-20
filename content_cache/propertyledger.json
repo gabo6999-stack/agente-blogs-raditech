@@ -769,6 +769,96 @@
       "measured_kd": 0,
       "suggested_slug": "1099-filing-property-managers",
       "status": "queued"
+    },
+    {
+      "order": 16,
+      "topic": "Property management accounting vs. real estate bookkeeping: the key differences",
+      "primary_keyword": "property management bookkeeping",
+      "measured_volume": null,
+      "measured_kd": null,
+      "suggested_slug": "pm-accounting-vs-bookkeeping",
+      "status": "queued"
+    },
+    {
+      "order": 17,
+      "topic": "How to read an HOA balance sheet and income statement: a board guide",
+      "primary_keyword": "hoa accounting",
+      "measured_volume": null,
+      "measured_kd": null,
+      "suggested_slug": "read-hoa-balance-sheet",
+      "status": "queued"
+    },
+    {
+      "order": 18,
+      "topic": "7 property management bookkeeping mistakes that cost owners money",
+      "primary_keyword": "property management bookkeeping",
+      "measured_volume": null,
+      "measured_kd": null,
+      "suggested_slug": "pm-bookkeeping-mistakes",
+      "status": "queued"
+    },
+    {
+      "order": 19,
+      "topic": "Cash vs. accrual accounting for property management: which method to use",
+      "primary_keyword": "property management accounting",
+      "measured_volume": null,
+      "measured_kd": null,
+      "suggested_slug": "cash-vs-accrual-property-management",
+      "status": "queued"
+    },
+    {
+      "order": 20,
+      "topic": "A year-end accounting checklist for property managers and HOAs",
+      "primary_keyword": "hoa accounting",
+      "measured_volume": null,
+      "measured_kd": null,
+      "suggested_slug": "year-end-accounting-checklist",
+      "status": "queued"
+    },
+    {
+      "order": 21,
+      "topic": "How to prepare your HOA or condo association for a financial audit",
+      "primary_keyword": "hoa accounting",
+      "measured_volume": null,
+      "measured_kd": null,
+      "suggested_slug": "prepare-hoa-financial-audit",
+      "status": "queued"
+    },
+    {
+      "order": 22,
+      "topic": "Security deposit accounting: state compliance for property managers",
+      "primary_keyword": "real estate trust accounting",
+      "measured_volume": null,
+      "measured_kd": null,
+      "suggested_slug": "security-deposit-accounting-compliance",
+      "status": "queued"
+    },
+    {
+      "order": 23,
+      "topic": "Reading delinquency and AR aging reports for community associations",
+      "primary_keyword": "hoa accounting",
+      "measured_volume": null,
+      "measured_kd": null,
+      "suggested_slug": "delinquency-ar-aging-hoa",
+      "status": "queued"
+    },
+    {
+      "order": 24,
+      "topic": "Reserve studies and reserve funding: what the numbers mean for your HOA",
+      "primary_keyword": "reserve fund accounting for hoa",
+      "measured_volume": null,
+      "measured_kd": null,
+      "suggested_slug": "reserve-studies-funding-hoa",
+      "status": "queued"
+    },
+    {
+      "order": 25,
+      "topic": "How to build an operating budget for a property management portfolio",
+      "primary_keyword": "property management accounting",
+      "measured_volume": null,
+      "measured_kd": null,
+      "suggested_slug": "operating-budget-property-management",
+      "status": "queued"
     }
   ],
   "page_optimization": [
