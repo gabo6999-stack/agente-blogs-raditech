@@ -1,5 +1,15 @@
+import re
+import unicodedata
 import requests
 from config import UNSPLASH_ACCESS_KEY
+
+
+def _ascii_slug(text: str, fallback: str = "unsplash") -> str:
+    """Slug ASCII seguro para headers HTTP (Content-Disposition es latin-1).
+    Nombres de fotógrafos con caracteres no-latin1 (ż, ı, ø...) rompían la subida."""
+    normalized = unicodedata.normalize("NFKD", text or "").encode("ascii", "ignore").decode("ascii")
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", normalized).strip("-").lower()
+    return slug or fallback
 
 
 def get_unsplash_image(query: str) -> dict | None:
@@ -65,7 +75,7 @@ def upload_image_to_wordpress(image_data: dict, wp_url: str, headers: dict) -> i
 
         # Subir a WordPress
         media_url = f"{wp_url}/wp-json/wp/v2/media"
-        filename = f"blog-image-{image_data['photographer'].replace(' ', '-').lower()}.jpg"
+        filename = f"blog-image-{_ascii_slug(image_data.get('photographer', ''))}.jpg"
 
         media_headers = {
             **headers,
