@@ -155,6 +155,74 @@ SITES = {
             },
         },
     },
+    "propertyledger": {
+        "wp_url": os.getenv("SITE4_WP_URL"),
+        "wp_user": os.getenv("SITE4_WP_USER"),
+        "wp_password": os.getenv("SITE4_WP_PASSWORD"),
+        "category": "Property Management Accounting",
+        "niche": "outsourced accounting for property management companies, HOAs, condo associations and real estate investors in South Florida",
+        "language": "en",
+        "keywords_seed": [
+            "property management accounting", "trust accounting for property managers",
+            "HOA accounting", "condo association accounting",
+            "outsourced accounting for property managers", "property management bookkeeping",
+            "owner statements property management", "month end close checklist property management",
+            "trust account reconciliation", "HOA financial reporting",
+            "property management CPA", "reserve study HOA", "AppFolio accounting",
+            "Buildium accounting", "South Florida property management accounting",
+            "commingling of funds property management", "property management financial statements",
+            "HOA board treasurer guide", "condo association budget",
+            "property management accounting software",
+        ],
+        "publish_days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+        "publish_time": "09:00",
+        "post_length": 1600,
+        "unsplash_fallback": "accounting finance office property management",
+        "prompt_profile": {
+            "brand": "Property Ledger Solutions",
+            "audience": (
+                "property management company owners, HOA and condo association board members/treasurers, "
+                "and real estate investors in South Florida (and the wider US) who need reliable outsourced "
+                "accounting instead of hiring and managing in-house accounting staff"
+            ),
+            "objective": (
+                "capture organic traffic from property managers and HOA/condo boards searching for outsourced "
+                "accounting, trust accounting compliance, and financial reporting help, and position Property "
+                "Ledger Solutions as the specialized accounting partner that understands property management — "
+                "not a generic bookkeeper"
+            ),
+            "tone": (
+                "professional, precise and reassuring, in US English; explains accounting and compliance "
+                "concepts in plain language for non-accountants (property managers, board members) while "
+                "still sounding like a specialist firm"
+            ),
+            "angles": [
+                "practical how-to guides for property managers (month-end close, reconciliations, owner statements)",
+                "trust accounting compliance and best practices (state trust account rules, commingling risks)",
+                "HOA/condo board financial reporting and audit-readiness",
+                "signs it's time to outsource accounting / red flags with your current bookkeeping",
+                "in-house bookkeeper vs outsourced accounting firm — how to decide",
+                "software and tools property managers use for accounting (AppFolio, Buildium, QuickBooks)",
+                "budgeting, reserves and variance analysis for HOAs and property managers",
+            ],
+            "categories": {
+                "Trust Accounting": "trust account reconciliation, commingling risk, state trust account compliance",
+                "Financial Reporting": "owner statements, financial statements, board reporting, audit-readiness",
+                "Property Management Accounting": "general accounting operations, month-end close, AP/AR, bookkeeping",
+                "HOA & Condo Accounting": "HOA and condo association specific content, reserves, budgets, treasurer guides",
+            },
+            "cta": (
+                "close with a soft CTA inviting the reader to schedule a free consultation at "
+                "propertyledger.us/contact or call (954) 261-1022"
+            ),
+            "internal_links": {
+                "https://propertyledger.us/": "Property Ledger Solutions — home",
+                "https://propertyledger.us/monthly-accounting/": "Monthly Accounting service",
+                "https://propertyledger.us/property-management-accounting/": "Property Management Accounting service",
+                "https://propertyledger.us/contact/": "Schedule a free consultation",
+            },
+        },
+    },
 }
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")

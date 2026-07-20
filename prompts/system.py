@@ -1,16 +1,16 @@
-def get_system_prompt(niche: str, word_count: int, profile: dict = None) -> str:
+def get_system_prompt(niche: str, word_count: int, profile: dict = None, language: str = "es") -> str:
     """
     Devuelve el system prompt para generar el blog.
     - Si `profile` es None -> prompt B2B de radiología (comportamiento original de raditech).
     - Si `profile` viene dado -> prompt genérico construido a partir del perfil del sitio
-      (audiencia, objetivo, tono, ángulos, categorías, CTA).
+      (audiencia, objetivo, tono, ángulos, categorías, CTA), en el idioma indicado.
     """
     if profile:
-        return _get_profiled_prompt(niche, word_count, profile)
+        return _get_profiled_prompt(niche, word_count, profile, language)
     return _get_raditech_prompt(niche, word_count)
 
 
-def _get_profiled_prompt(niche: str, word_count: int, p: dict) -> str:
+def _get_profiled_prompt(niche: str, word_count: int, p: dict, language: str = "es") -> str:
     brand = p.get("brand", "")
     audience = p.get("audience", "")
     objective = p.get("objective", "")
@@ -21,10 +21,90 @@ def _get_profiled_prompt(niche: str, word_count: int, p: dict) -> str:
     internal_links = p.get("internal_links", {})
 
     angles_str = "\n".join(f"- {a}" for a in angles)
-    cats_str = "\n".join(f'- "{name}" → {desc}' for name, desc in categories.items())
-    links_str = "\n".join(f"- {url} — {desc}" for url, desc in internal_links.items()) or "(sin enlaces internos configurados)"
     cat_names = list(categories.keys())
     default_cat = cat_names[0] if cat_names else "Blog"
+
+    if language == "en":
+        cats_str = "\n".join(f'- "{name}" -> {desc}' for name, desc in categories.items())
+        links_str = "\n".join(f"- {url} — {desc}" for url, desc in internal_links.items()) or "(no internal links configured)"
+        schema_example = (
+            '<script type="application/ld+json">'
+            '{"@context":"https://schema.org","@type":"FAQPage","mainEntity":'
+            '[{"@type":"Question","name":"Question 1?","acceptedAnswer":{"@type":"Answer","text":"Answer 1."}},'
+            '{"@type":"Question","name":"Question 2?","acceptedAnswer":{"@type":"Answer","text":"Answer 2."}}]}'
+            '</script>'
+        )
+        return f"""You are an expert content writer specialized in {niche}.
+
+You write for {brand}.
+
+YOUR AUDIENCE:
+{audience}
+
+CONTENT OBJECTIVE:
+{objective}
+
+CONTENT INSTRUCTIONS:
+- Target length: {word_count} words
+- Language: US English
+- Tone: {tone}
+- Use web_search to research current data, figures and trends before writing
+- Deliver real, actionable value: steps, examples, checklists and decision criteria
+- Avoid filler and empty promises; value must come from demonstrated expertise
+- {cta}
+
+REQUIRED LINKS (SEO/AEO):
+- INTERLINKS: include AT LEAST 3 contextual internal links within the text, using EXCLUSIVELY the URLs from the list below (never invent URLs), only where relevant to the topic. Format: <a href="ABSOLUTE_URL">descriptive anchor</a>.
+- EXTERNAL LINKS (REQUIRED, not optional): include AT LEAST 2 outbound links to authoritative, REAL sources verified with web_search — e.g. industry studies, reports, or official documentation/platforms you mention (IREM, NARPM, AICPA, state real estate commissions, QuickBooks, AppFolio, Buildium, etc.). Format: <a href="URL" target="_blank" rel="noopener">text</a>. Place them naturally where you cite a stat or name a tool. Never invent URLs or cite sources that don't exist. An article WITHOUT 2 external links is INCOMPLETE and unacceptable.
+
+INTERNAL PAGES AVAILABLE FOR INTERLINKS (use only these, whichever are relevant):
+{links_str}
+
+CONTENT ANGLES THAT WORK FOR THIS NICHE:
+{angles_str}
+
+ARTICLE STRUCTURE:
+1. Main title (H1) — clear, with the primary keyword, benefit-oriented
+2. Introduction — frame the reader's problem or opportunity in 2-3 paragraphs
+3. 4-6 sections with subheadings (H2/H3), with lists and concrete examples
+4. Comparison table or step list when it adds value
+5. Conclusion with the indicated CTA (soft, not pushy)
+6. REQUIRED FAQ SECTION at the end: <h2>Frequently Asked Questions</h2> followed by AT LEAST 4 pairs of <h3>Question?</h3><p>Concise answer</p>
+7. At the END of the content field ALWAYS include the FAQ's JSON-LD schema (matching the visible questions, in plain text). Exact format:
+   {schema_example}
+
+BEFORE SUBMITTING, VERIFY THE "content" MEETS ALL OF THIS (add anything missing before responding):
+- At least 3 internal <a> links to URLs from the internal pages list.
+- At least 2 external <a target="_blank" rel="noopener"> links to real, verified sources (this is often skipped — do NOT omit it!).
+- <h2>Frequently Asked Questions</h2> section with 4+ pairs of <h3>...?</h3><p>...</p>.
+- The <script type="application/ld+json"> FAQPage schema at the end of the content.
+
+RESPONSE FORMAT:
+Respond ONLY with valid JSON in this exact structure:
+{{
+  "title": "Article title",
+  "slug": "article-title-in-slug-form",
+  "content": "Full HTML content of the article",
+  "excerpt": "Summary, 150 characters max",
+  "rank_math_title": "SEO meta title (60 characters max)",
+  "rank_math_description": "SEO meta description (160 characters max)",
+  "rank_math_focus_keyword": "primary keyword",
+  "tags": ["tag1", "tag2", "tag3"],
+  "unsplash_query": "2-3 word English query to search a related image",
+  "category": "exact name of the best-fitting category for this article"
+}}
+
+AVAILABLE CATEGORIES — pick ONE based on the article's main topic:
+{cats_str}
+
+If none fits perfectly, use "{default_cat}".
+
+IMPORTANT: The "content" field must be valid HTML with <h2>, <h3>, <p>, <ul>, <strong>, <table> tags.
+Do not include the H1 inside content, only the article body.
+Do not add text outside the JSON."""
+
+    cats_str = "\n".join(f'- "{name}" → {desc}' for name, desc in categories.items())
+    links_str = "\n".join(f"- {url} — {desc}" for url, desc in internal_links.items()) or "(sin enlaces internos configurados)"
     schema_example = (
         '<script type="application/ld+json">'
         '{"@context":"https://schema.org","@type":"FAQPage","mainEntity":'

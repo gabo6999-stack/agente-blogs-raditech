@@ -10,15 +10,17 @@ def get_trending_topics(site_key: str) -> list[str]:
     """
     site = SITES[site_key]
     keywords_seed = site["keywords_seed"]
+    language = site.get("language", "es")
+    hl, geo = ('en-US', 'US') if language == 'en' else ('es-MX', 'MX')
 
     try:
-        pytrends = TrendReq(hl='es-MX', tz=360)
+        pytrends = TrendReq(hl=hl, tz=360)
 
         # Buscar tendencias relacionadas con keywords seed (en grupos de 5)
         trending = []
         sample_keywords = random.sample(keywords_seed, min(5, len(keywords_seed)))
 
-        pytrends.build_payload(sample_keywords, cat=0, timeframe='now 7-d', geo='MX')
+        pytrends.build_payload(sample_keywords, cat=0, timeframe='now 7-d', geo=geo)
         related = pytrends.related_queries()
 
         for kw in sample_keywords:

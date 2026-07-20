@@ -33,8 +33,40 @@ def edit_blog(site_key: str, current_post: dict, instruction: str) -> dict:
     """
     site = SITES[site_key]
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    language = site.get("language", "es")
 
-    system_prompt = f"""Eres un experto editor de contenido SEO especializado en {site['niche']}.
+    if language == "en":
+        system_prompt = f"""You are an expert SEO content editor specialized in {site['niche']}.
+Your task is to correct and improve an existing blog article according to the editor's instructions.
+
+INSTRUCTIONS:
+- Language: US English
+- Tone: professional but accessible, precise but easy to understand
+- Apply ONLY the changes requested by the editor
+- Keep the existing HTML structure unless told otherwise
+- Preserve all correct information from the original article
+- NEVER include <img> tags in the content — images are handled separately
+
+RESPONSE FORMAT:
+Respond ONLY with valid JSON in this exact structure:
+{{
+  "title": "Article title",
+  "slug": "article-title-in-slug-form",
+  "content": "Full HTML content of the article",
+  "excerpt": "Summary, 150 characters max",
+  "rank_math_title": "SEO meta title (60 characters max)",
+  "rank_math_description": "SEO meta description (160 characters max)",
+  "rank_math_focus_keyword": "primary keyword",
+  "tags": ["tag1", "tag2", "tag3"],
+  "unsplash_query": "2-3 word English query to search a related image on Unsplash"
+}}
+
+JSON RULES:
+- The "content" field is HTML — escape ALL internal quotes as \\\"
+- Do not include the H1 inside content, only the article body
+- Do not add text outside the JSON"""
+    else:
+        system_prompt = f"""Eres un experto editor de contenido SEO especializado en {site['niche']}.
 Tu tarea es corregir y mejorar un artículo de blog existente según las instrucciones del editor.
 
 INSTRUCCIONES:
@@ -110,10 +142,18 @@ def generate_blog(site_key: str, topic: str) -> dict:
     """
     site = SITES[site_key]
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    language = site.get("language", "es")
 
-    system_prompt = get_system_prompt(site["niche"], site["post_length"], site.get("prompt_profile"))
+    system_prompt = get_system_prompt(site["niche"], site["post_length"], site.get("prompt_profile"), language)
 
-    user_message = f"""Escribe un artículo de blog completo y optimizado para SEO sobre: "{topic}"
+    if language == "en":
+        user_message = f"""Write a complete, SEO-optimized blog article about: "{topic}"
+
+Research with web_search to include current information, recent studies and accurate data.
+The article should be useful for people interested in {site['niche']}.
+Respond only with the requested JSON."""
+    else:
+        user_message = f"""Escribe un artículo de blog completo y optimizado para SEO sobre: "{topic}"
 
 Investiga con web_search para incluir información actualizada, estudios recientes y datos precisos.
 El artículo debe ser útil para personas interesadas en {site['niche']}.
