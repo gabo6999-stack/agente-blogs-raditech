@@ -118,7 +118,7 @@ Responde únicamente con el JSON corregido."""
 
     response = client.messages.create(
         model="claude-sonnet-4-5",
-        max_tokens=8000,
+        max_tokens=16000,
         system=system_prompt,
         messages=[{"role": "user", "content": user_message}]
     )
@@ -165,7 +165,7 @@ Responde únicamente con el JSON solicitado."""
 
     response = client.messages.create(
         model="claude-sonnet-4-5",
-        max_tokens=8000,
+        max_tokens=16000,
         system=system_prompt,
         tools=[{"type": "web_search_20250305", "name": "web_search"}],
         messages=messages
@@ -186,7 +186,7 @@ Responde únicamente con el JSON solicitado."""
 
         response = client.messages.create(
             model="claude-sonnet-4-5",
-            max_tokens=8000,
+            max_tokens=16000,
             system=system_prompt,
             tools=[{"type": "web_search_20250305", "name": "web_search"}],
             messages=messages
