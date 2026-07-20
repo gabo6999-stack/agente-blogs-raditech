@@ -48,20 +48,21 @@ INSTRUCTIONS:
 - NEVER include <img> tags in the content — images are handled separately
 
 RESPONSE FORMAT:
-Respond ONLY with valid JSON in this exact structure:
+Respond ONLY with valid JSON in this EXACT field order. The large "content" field MUST come LAST so metadata is never lost if the response is long:
 {{
   "title": "Article title",
   "slug": "article-title-in-slug-form",
-  "content": "Full HTML content of the article",
-  "excerpt": "Summary, 150 characters max",
   "rank_math_title": "SEO meta title (60 characters max)",
   "rank_math_description": "SEO meta description (160 characters max)",
   "rank_math_focus_keyword": "primary keyword",
   "tags": ["tag1", "tag2", "tag3"],
-  "unsplash_query": "2-3 word English query to search a related image on Unsplash"
+  "unsplash_query": "2-3 word English query to search a related image on Unsplash",
+  "excerpt": "Summary, 150 characters max",
+  "content": "Full HTML content of the article (this field LAST)"
 }}
 
 JSON RULES:
+- Emit all small metadata fields FIRST, then "content" LAST.
 - The "content" field is HTML — escape ALL internal quotes as \\\"
 - Do not include the H1 inside content, only the article body
 - Do not add text outside the JSON"""
@@ -78,20 +79,21 @@ INSTRUCCIONES:
 - NUNCA incluyas etiquetas <img> en el content — las imágenes se manejan por separado
 
 FORMATO DE RESPUESTA:
-Responde ÚNICAMENTE con un JSON válido con esta estructura exacta:
+Responde ÚNICAMENTE con un JSON válido en ESTE orden exacto de campos. El campo grande "content" DEBE ir AL FINAL para que el metadata nunca se pierda si la respuesta es larga:
 {{
   "title": "Título del artículo",
   "slug": "titulo-del-articulo-en-slug",
-  "content": "Contenido HTML completo del artículo",
-  "excerpt": "Resumen de 150 caracteres máximo",
   "rank_math_title": "Meta title SEO (60 caracteres máximo)",
   "rank_math_description": "Meta description SEO (160 caracteres máximo)",
   "rank_math_focus_keyword": "keyword principal",
   "tags": ["tag1", "tag2", "tag3"],
-  "unsplash_query": "2-3 palabras en inglés para buscar imagen en Unsplash"
+  "unsplash_query": "2-3 palabras en inglés para buscar imagen en Unsplash",
+  "excerpt": "Resumen de 150 caracteres máximo",
+  "content": "Contenido HTML completo del artículo (este campo AL FINAL)"
 }}
 
 REGLAS DEL JSON:
+- Emite primero todos los campos de metadata y el "content" AL FINAL.
 - El campo "content" es HTML — escapa TODAS las comillas internas como \\\"
 - No incluyas el H1 dentro del content, solo el cuerpo del artículo
 - No agregues texto fuera del JSON"""
@@ -118,7 +120,7 @@ Responde únicamente con el JSON corregido."""
 
     response = client.messages.create(
         model="claude-sonnet-4-5",
-        max_tokens=16000,
+        max_tokens=20000,
         system=system_prompt,
         messages=[{"role": "user", "content": user_message}]
     )
@@ -165,7 +167,7 @@ Responde únicamente con el JSON solicitado."""
 
     response = client.messages.create(
         model="claude-sonnet-4-5",
-        max_tokens=16000,
+        max_tokens=20000,
         system=system_prompt,
         tools=[{"type": "web_search_20250305", "name": "web_search"}],
         messages=messages
@@ -186,7 +188,7 @@ Responde únicamente con el JSON solicitado."""
 
         response = client.messages.create(
             model="claude-sonnet-4-5",
-            max_tokens=16000,
+            max_tokens=20000,
             system=system_prompt,
             tools=[{"type": "web_search_20250305", "name": "web_search"}],
             messages=messages

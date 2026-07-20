@@ -23,6 +23,7 @@ def _get_profiled_prompt(niche: str, word_count: int, p: dict, language: str = "
     angles_str = "\n".join(f"- {a}" for a in angles)
     cat_names = list(categories.keys())
     default_cat = cat_names[0] if cat_names else "Blog"
+    word_count_max = word_count + 300  # techo duro; evita que el content infle y trunque el JSON
 
     if language == "en":
         cats_str = "\n".join(f'- "{name}" -> {desc}' for name, desc in categories.items())
@@ -80,18 +81,18 @@ BEFORE SUBMITTING, VERIFY THE "content" MEETS ALL OF THIS (add anything missing 
 - The <script type="application/ld+json"> FAQPage schema at the end of the content.
 
 RESPONSE FORMAT:
-Respond ONLY with valid JSON in this exact structure:
+Respond ONLY with valid JSON in this EXACT field order. The large "content" field MUST come LAST, after every metadata field, so the metadata is never lost if the response is long:
 {{
   "title": "Article title",
   "slug": "article-title-in-slug-form",
-  "content": "Full HTML content of the article",
-  "excerpt": "Summary, 150 characters max",
   "rank_math_title": "SEO meta title (60 characters max)",
   "rank_math_description": "SEO meta description (160 characters max)",
   "rank_math_focus_keyword": "primary keyword",
   "tags": ["tag1", "tag2", "tag3"],
+  "category": "exact name of the best-fitting category for this article",
   "unsplash_query": "2-3 word English query to search a related image",
-  "category": "exact name of the best-fitting category for this article"
+  "excerpt": "Summary, 150 characters max",
+  "content": "Full HTML content of the article (this field LAST)"
 }}
 
 AVAILABLE CATEGORIES — pick ONE based on the article's main topic:
@@ -99,7 +100,9 @@ AVAILABLE CATEGORIES — pick ONE based on the article's main topic:
 
 If none fits perfectly, use "{default_cat}".
 
+LENGTH: keep "content" close to {word_count} words (hard ceiling {word_count_max}). Do not pad — a tight, focused article ranks better than a bloated one.
 IMPORTANT: The "content" field must be valid HTML with <h2>, <h3>, <p>, <ul>, <strong>, <table> tags.
+Emit all the small metadata fields FIRST, then the "content" field LAST.
 Do not include the H1 inside content, only the article body.
 Do not add text outside the JSON."""
 
@@ -159,18 +162,18 @@ ANTES DE ENTREGAR, VERIFICA QUE EL "content" CUMPLA TODO ESTO (si falta algo, ag
 - El <script type="application/ld+json"> de FAQPage al final del content.
 
 FORMATO DE RESPUESTA:
-Responde ÚNICAMENTE con un JSON válido con esta estructura exacta:
+Responde ÚNICAMENTE con un JSON válido en ESTE orden exacto de campos. El campo grande "content" DEBE ir AL FINAL, después de todos los metadatos, para que el metadata nunca se pierda si la respuesta es larga:
 {{
   "title": "Título del artículo",
   "slug": "titulo-del-articulo-en-slug",
-  "content": "Contenido HTML completo del artículo",
-  "excerpt": "Resumen de 150 caracteres máximo",
   "rank_math_title": "Meta title SEO (60 caracteres máximo)",
   "rank_math_description": "Meta description SEO (160 caracteres máximo)",
   "rank_math_focus_keyword": "keyword principal",
   "tags": ["tag1", "tag2", "tag3"],
+  "category": "nombre exacto de la categoría más adecuada para este artículo",
   "unsplash_query": "query en inglés para buscar imagen relacionada (2-3 palabras)",
-  "category": "nombre exacto de la categoría más adecuada para este artículo"
+  "excerpt": "Resumen de 150 caracteres máximo",
+  "content": "Contenido HTML completo del artículo (este campo AL FINAL)"
 }}
 
 CATEGORÍAS DISPONIBLES — elige UNA según el tema principal del artículo:
@@ -178,7 +181,9 @@ CATEGORÍAS DISPONIBLES — elige UNA según el tema principal del artículo:
 
 Si ninguna encaja perfectamente, usa "{default_cat}".
 
+LONGITUD: mantén "content" cerca de {word_count} palabras (techo duro {word_count_max}). No rellenes — un artículo enfocado posiciona mejor que uno inflado.
 IMPORTANTE: El campo "content" debe ser HTML válido con etiquetas <h2>, <h3>, <p>, <ul>, <strong>, <table>.
+Emite primero todos los campos de metadata y el "content" AL FINAL.
 No incluyas el H1 dentro del content, solo el cuerpo del artículo.
 No agregues texto fuera del JSON."""
 
