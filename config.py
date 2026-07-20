@@ -219,8 +219,7 @@ SITES = {
                 "https://propertyledger.us/": "Property Ledger Solutions — home",
                 "https://propertyledger.us/monthly-accounting/": "Monthly Accounting service",
                 "https://propertyledger.us/property-management-accounting/": "Property Management Trust Accounting service",
-                # NOTA: /hoa-condo-accounting/ está en BORRADOR (2026-07-20). Re-agregar
-                # a internal_links cuando se republique, para que los blogs HOA la enlacen.
+                "https://propertyledger.us/hoa-condo-accounting/": "HOA & Condo Association Accounting service",
                 "https://propertyledger.us/contact/": "Schedule a free consultation",
             },
         },
