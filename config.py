@@ -218,7 +218,8 @@ SITES = {
             "internal_links": {
                 "https://propertyledger.us/": "Property Ledger Solutions — home",
                 "https://propertyledger.us/monthly-accounting/": "Monthly Accounting service",
-                "https://propertyledger.us/property-management-accounting/": "Property Management Accounting service",
+                "https://propertyledger.us/property-management-accounting/": "Property Management Trust Accounting service",
+                "https://propertyledger.us/hoa-condo-accounting/": "HOA & Condo Association Accounting service",
                 "https://propertyledger.us/contact/": "Schedule a free consultation",
             },
         },
