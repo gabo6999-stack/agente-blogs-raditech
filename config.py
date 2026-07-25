@@ -99,6 +99,11 @@ SITES = {
         "category": "Radiología e Imagen",
         "niche": "radiología e imagenología diagnóstica para pacientes (rayos X, tomografía, ultrasonido, mastografía) en Mazatlán, Sinaloa",
         "language": "es",
+        # La cuenta publicadora (pedrogavito) es 'author': WordPress borra el
+        # <script> ld+json del content al guardar. Se persiste el FAQPage schema
+        # vía Rank Math meta (rankmath/v1/updateMeta), que sí sobrevive. Ver
+        # tools.wordpress.set_faq_schema_meta.
+        "faq_schema_via_meta": True,
         "keywords_seed": [
             "historia de la radiología", "rayos x Mazatlán", "tomografía Mazatlán",
             "estudios de imagen Mazatlán", "ultrasonido Mazatlán", "mastografía Mazatlán",

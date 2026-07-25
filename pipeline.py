@@ -163,6 +163,13 @@ def run_pipeline(site_key: str, topic: str = None):
                     content=blog_data.get("content", ""),
                     url=post.get("link", "")
                 )
+
+            # 8. FAQ schema vía Rank Math meta para sitios cuya cuenta publicadora
+            #    es 'author' (WordPress borra el <script> del content). Ver
+            #    tools.wordpress.set_faq_schema_meta / config flag.
+            if SITES[site_key].get("faq_schema_via_meta"):
+                from tools.wordpress import set_faq_schema_meta
+                set_faq_schema_meta(site_key, post.get("id"), blog_data.get("content", ""))
         else:
             agent_status["last_error"] = "Post creation failed"
             log_post(site_key, topic, None, success=False, error="Post creation failed")
@@ -223,6 +230,12 @@ def run_edit_pipeline(site_key: str, post_id: int, instruction: str, update_imag
         post = update_post(site_key, post_id, updated_blog_data, featured_media_id)
 
         if post:
+            # Refrescar el FAQ schema (la FAQ pudo cambiar en la edición) en sitios
+            # que lo persisten vía Rank Math meta en vez de <script> en el content.
+            if SITES[site_key].get("faq_schema_via_meta"):
+                from tools.wordpress import set_faq_schema_meta
+                set_faq_schema_meta(site_key, post_id, updated_blog_data.get("content", ""))
+
             agent_status["last_post"] = {
                 "title": post.get("title", {}).get("rendered", ""),
                 "url": post.get("link", ""),

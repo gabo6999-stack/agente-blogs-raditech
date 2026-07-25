@@ -1,6 +1,8 @@
+import uuid
 import requests
 from requests.auth import HTTPBasicAuth
 from config import SITES
+from tools.faq_schema import extract_visible_faq
 
 
 def get_wp_headers(site_key: str) -> tuple[str, dict]:
@@ -69,6 +71,64 @@ def set_rankmath_meta(wp_url: str, headers: dict, post_id: int, blog_data: dict)
     except Exception as e:
         print(f"[WP] Error en updateMeta: {e}")
     return False
+
+
+def set_faq_schema_meta(site_key: str, post_id: int, content: str) -> dict:
+    """Persiste el FAQPage schema en Rank Math (meta `rank_math_schema_FAQPage`)
+    vía rankmath/v1/updateMeta, leyendo la FAQ VISIBLE del content.
+
+    Por qué: en sitios cuya cuenta publicadora es 'author' (sin unfiltered_html,
+    p.ej. CMLC/pedrogavito), WordPress BORRA el <script> ld+json del content al
+    guardar (wp_kses_post), así que embeberlo no sirve. Rank Math, en cambio,
+    emite el schema en el @graph del <head> a partir de este meta, inmune a kses.
+    Tras guardarlo se re-guarda el post para forzar el purge de LiteSpeed
+    (Hostinger cachea el HTML). Se activa por sitio con el flag
+    SITES[site_key]["faq_schema_via_meta"] = True.
+    """
+    faqs = extract_visible_faq(content or "")
+    if not faqs:
+        print(f"[FAQ schema] {site_key} #{post_id}: sin FAQ visible, se omite")
+        return {"skipped": "sin FAQ visible"}
+    wp_url, headers = get_wp_headers(site_key)
+    faq_value = {
+        "@type": "FAQPage",
+        "metadata": {
+            "title": "FAQ",
+            "type": "template",
+            "shortcode": f"s-{uuid.uuid4().hex[:13]}",
+            "isPrimary": 0,
+            "reviewLocation": "custom",
+        },
+        "mainEntity": [
+            {"@type": "Question", "name": f["question"],
+             "acceptedAnswer": {"@type": "Answer", "text": f["answer"]}}
+            for f in faqs
+        ],
+    }
+    try:
+        r = requests.post(
+            f"{wp_url}/wp-json/rankmath/v1/updateMeta",
+            headers=headers,
+            json={"objectID": int(post_id), "objectType": "post",
+                  "meta": {"rank_math_schema_FAQPage": faq_value}},
+            timeout=20,
+        )
+        ok = r.status_code == 200
+        print(f"[FAQ schema] {site_key} #{post_id}: updateMeta {r.status_code} "
+              f"({len(faqs)} preguntas)")
+        # Purga de LiteSpeed: re-guardar el post dispara purge-on-update para que
+        # el HTML cacheado se regenere ya con el schema en el <head>.
+        try:
+            requests.post(
+                f"{wp_url}/wp-json/wp/v2/posts/{int(post_id)}",
+                headers=headers, json={"content": content}, timeout=20,
+            )
+        except Exception as e:
+            print(f"[FAQ schema] purge re-save no crítico falló: {e}")
+        return {"ok": ok, "status": r.status_code, "questions": len(faqs)}
+    except Exception as e:
+        print(f"[FAQ schema] {site_key} #{post_id}: error {e}")
+        return {"error": str(e)}
 
 
 def publish_post(site_key: str, blog_data: dict, featured_media_id: int = None) -> dict | None:
