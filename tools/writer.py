@@ -3,6 +3,7 @@ import anthropic
 from json_repair import repair_json
 from config import ANTHROPIC_API_KEY, SITES
 from prompts.system import get_system_prompt
+from tools.faq_schema import rebuild_faq_jsonld
 
 
 def _parse_json(text: str) -> dict:
@@ -129,6 +130,8 @@ Responde únicamente con el JSON corregido."""
 
     try:
         blog_data = _parse_json(full_text)
+        if blog_data.get("content"):
+            blog_data["content"] = rebuild_faq_jsonld(blog_data["content"])
         print(f"[Writer] Blog editado: {blog_data.get('title', 'Sin título')}")
         return blog_data
     except Exception as e:
@@ -198,6 +201,8 @@ Responde únicamente con el JSON solicitado."""
 
     try:
         blog_data = _parse_json(full_text)
+        if blog_data.get("content"):
+            blog_data["content"] = rebuild_faq_jsonld(blog_data["content"])
         print(f"[Writer] Blog generado: {blog_data.get('title', 'Sin título')}")
         return blog_data
     except Exception as e:

@@ -28,13 +28,6 @@ def _get_profiled_prompt(niche: str, word_count: int, p: dict, language: str = "
     if language == "en":
         cats_str = "\n".join(f'- "{name}" -> {desc}' for name, desc in categories.items())
         links_str = "\n".join(f"- {url} — {desc}" for url, desc in internal_links.items()) or "(no internal links configured)"
-        schema_example = (
-            '<script type="application/ld+json">'
-            '{"@context":"https://schema.org","@type":"FAQPage","mainEntity":'
-            '[{"@type":"Question","name":"Question 1?","acceptedAnswer":{"@type":"Answer","text":"Answer 1."}},'
-            '{"@type":"Question","name":"Question 2?","acceptedAnswer":{"@type":"Answer","text":"Answer 2."}}]}'
-            '</script>'
-        )
         return f"""You are an expert content writer specialized in {niche}.
 
 You write for {brand}.
@@ -71,14 +64,13 @@ ARTICLE STRUCTURE:
 4. Comparison table or step list when it adds value
 5. Conclusion with the indicated CTA (soft, not pushy)
 6. REQUIRED FAQ SECTION at the end: <h2>Frequently Asked Questions</h2> followed by AT LEAST 4 pairs of <h3>Question?</h3><p>Concise answer</p>
-7. At the END of the content field ALWAYS include the FAQ's JSON-LD schema (matching the visible questions, in plain text). Exact format:
-   {schema_example}
+   Do NOT write any JSON-LD / <script> schema yourself — the system builds the FAQPage schema automatically from these visible questions and answers. Just write the visible <h3>/<p> FAQ clearly and correctly.
 
 BEFORE SUBMITTING, VERIFY THE "content" MEETS ALL OF THIS (add anything missing before responding):
 - At least 3 internal <a> links to URLs from the internal pages list.
 - At least 2 external <a target="_blank" rel="noopener"> links to real, verified sources (this is often skipped — do NOT omit it!).
 - <h2>Frequently Asked Questions</h2> section with 4+ pairs of <h3>...?</h3><p>...</p>.
-- The <script type="application/ld+json"> FAQPage schema at the end of the content.
+- No <script>/JSON-LD written by you (the system adds it from the visible FAQ).
 
 RESPONSE FORMAT:
 Respond ONLY with valid JSON in this EXACT field order. The large "content" field MUST come LAST, after every metadata field, so the metadata is never lost if the response is long:
@@ -108,13 +100,6 @@ Do not add text outside the JSON."""
 
     cats_str = "\n".join(f'- "{name}" → {desc}' for name, desc in categories.items())
     links_str = "\n".join(f"- {url} — {desc}" for url, desc in internal_links.items()) or "(sin enlaces internos configurados)"
-    schema_example = (
-        '<script type="application/ld+json">'
-        '{"@context":"https://schema.org","@type":"FAQPage","mainEntity":'
-        '[{"@type":"Question","name":"¿Pregunta 1?","acceptedAnswer":{"@type":"Answer","text":"Respuesta 1."}},'
-        '{"@type":"Question","name":"¿Pregunta 2?","acceptedAnswer":{"@type":"Answer","text":"Respuesta 2."}}]}'
-        '</script>'
-    )
 
     return f"""Eres un experto redactor de contenido especializado en {niche}.
 
@@ -152,14 +137,13 @@ ESTRUCTURA DEL ARTÍCULO:
 4. Tabla comparativa o lista de pasos cuando aporte valor
 5. Conclusión con el CTA indicado (sutil, no agresivo)
 6. SECCIÓN FAQ OBLIGATORIA al final: <h2>Preguntas frecuentes</h2> seguido de AL MENOS 4 pares <h3>¿Pregunta?</h3><p>Respuesta concisa</p>
-7. Al FINAL del campo content incluye SIEMPRE el schema JSON-LD de la FAQ (con el mismo texto de las preguntas visibles, en texto plano). Formato exacto:
-   {schema_example}
+   NO escribas ningún schema JSON-LD / <script> tú mismo — el sistema genera el schema FAQPage automáticamente a partir de estas preguntas y respuestas visibles. Solo redacta bien y con claridad la FAQ visible <h3>/<p>.
 
 ANTES DE ENTREGAR, VERIFICA QUE EL "content" CUMPLA TODO ESTO (si falta algo, agrégalo antes de responder):
 - Al menos 3 enlaces internos <a> a URLs de la lista de páginas internas.
 - Al menos 2 enlaces externos <a target="_blank" rel="noopener"> a fuentes reales verificadas (¡este suele faltar — NO lo omitas!).
 - Sección <h2>Preguntas frecuentes</h2> con 4+ pares <h3>¿…?</h3><p>…</p>.
-- El <script type="application/ld+json"> de FAQPage al final del content.
+- Ningún <script>/JSON-LD escrito por ti (el sistema lo agrega desde la FAQ visible).
 
 FORMATO DE RESPUESTA:
 Responde ÚNICAMENTE con un JSON válido en ESTE orden exacto de campos. El campo grande "content" DEBE ir AL FINAL, después de todos los metadatos, para que el metadata nunca se pierda si la respuesta es larga:
