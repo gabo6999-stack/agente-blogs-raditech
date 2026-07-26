@@ -1,0 +1,125 @@
+<!-- ============================================================
+     Property Ledger Solutions · Blog search (filters the cards the
+     [pls_blog_posts] shortcode already renders — no fetch needed).
+     Uses the site's own design tokens (--pls-*), scoped under #pgb-search.
+     ============================================================ -->
+<div id="pgb-search">
+  <style>
+  #pgb-search{margin:0 0 1.4rem}
+  .pgb-bar{display:flex;align-items:center;gap:11px;background:#fff;
+    border:1.5px solid var(--pls-line-2);border-radius:14px;padding:0 16px;
+    max-width:620px;box-shadow:0 1px 2px rgba(10,26,56,.04);
+    transition:border-color .2s,box-shadow .2s}
+  .pgb-bar:focus-within{border-color:var(--pls-green);box-shadow:0 0 0 4px rgba(91,138,46,.14)}
+  .pgb-bar svg{flex:none;width:19px;height:19px;color:var(--pls-muted)}
+  .pgb-bar:focus-within svg{color:var(--pls-green-ink)}
+  #pgb-input{flex:1;border:0;background:none;outline:none;color:var(--pls-ink);
+    font-family:var(--pls-body);font-size:1rem;padding:14px 0}
+  #pgb-input::placeholder{color:var(--pls-muted)}
+  #pgb-input::-webkit-search-cancel-button{display:none}
+  #pgb-clear{flex:none;border:0;background:var(--pls-bg-alt);color:var(--pls-muted);
+    width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:1rem;line-height:1;
+    padding:0;display:grid;place-items:center;transition:background .15s,color .15s}
+  #pgb-clear:hover{background:var(--pls-green);color:#fff}
+  .pgb-hint{color:var(--pls-muted);font-size:.85rem;margin:10px 0 0;font-family:var(--pls-body)}
+  .pgb-hint kbd{font-family:ui-monospace,Consolas,monospace;background:var(--pls-bg-alt);
+    border:1px solid var(--pls-line);border-radius:5px;padding:1px 6px;font-size:.78rem;color:var(--pls-text)}
+  #pgb-count{font-family:var(--pls-body);font-size:.8rem;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--pls-muted);margin:18px 0 0}
+  #pgb-count b{color:var(--pls-ink)}
+  .pls-blog-card.pgb-hidden{display:none!important}
+  </style>
+
+  <div class="pgb-bar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
+    <input id="pgb-input" type="search" autocomplete="off" spellcheck="false" placeholder="Search a topic: trust accounting, HOA, owner statements…" aria-label="Search articles">
+    <button id="pgb-clear" type="button" hidden aria-label="Clear search">&times;</button>
+  </div>
+  <p class="pgb-hint">Filters instantly as you type · shortcut <kbd>/</kbd></p>
+  <p id="pgb-count"></p>
+  <div id="pgb-empty" style="display:none;text-align:center;color:var(--pls-muted);font-size:1.05rem;background:#fff;border:1px dashed var(--pls-line-2);border-radius:18px;padding:2.5rem 1.5rem;max-width:560px;margin:1.2rem auto 0">
+    No articles match your search. <button type="button" id="pgb-reset" style="background:none;border:0;color:var(--pls-green-ink);font-weight:600;cursor:pointer;text-decoration:underline;font:inherit;padding:0">Clear search</button>
+  </div>
+
+  <script>
+  (function(){
+    // Este widget se inserta ANTES del shortcode [pls_blog_posts] en el HTML;
+    // hay que esperar a que el documento termine de parsear para que las
+    // tarjetas .pls-blog-card ya existan en el DOM.
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); }
+    else { init(); }
+
+    function init(){
+    var input=document.getElementById('pgb-input'), clearBtn=document.getElementById('pgb-clear'),
+        countEl=document.getElementById('pgb-count'), emptyEl=document.getElementById('pgb-empty'),
+        resetBtn=document.getElementById('pgb-reset');
+
+    var cards=Array.prototype.slice.call(document.querySelectorAll('.pls-blog-card'));
+    if(!cards.length){ document.getElementById('pgb-search').style.display='none'; return; }
+    var TOTAL_LINKS=cards.length;
+    // De-dupe by article URL: the theme renders each post twice (desktop/mobile grids).
+    var seen={}; var uniqueTotal=0;
+    cards.forEach(function(c){
+      var a=c.querySelector('.pls-blog-h a'); var href=a?a.getAttribute('href'):c.textContent;
+      if(!seen[href]){ seen[href]=true; uniqueTotal++; }
+    });
+
+    // Synonyms for property-management accounting topics (edit freely; lowercase).
+    var SYN=[
+      ['hoa','homeowners association','homeowners associations'],
+      ['trust accounting','trust account','trust accounts'],
+      ['month-end','month end','month end close','monthly close'],
+      ['owner statements','owner statement'],
+      ['bookkeeping','bookkeeper'],
+      ['financial statements','financial reporting','financial statement'],
+      ['reserve fund','reserves','reserve funds'],
+      ['condo','condominium','condo association'],
+      ['budget','budgeting'],
+      ['outsourced accounting','outsource accounting','outsourcing']
+    ];
+    function expandSyn(base){
+      var add=[];
+      for(var i=0;i<SYN.length;i++){var g=SYN[i];
+        for(var j=0;j<g.length;j++){ if(base.indexOf(g[j])>=0){add=add.concat(g);break;} }
+      }
+      return add.length?base+' '+add.join(' '):base;
+    }
+    function foldChar(c){var n=c.normalize('NFD');return (n[0]||c).toLowerCase();}
+    function fold(s){return Array.from(s).map(foldChar).join('');}
+
+    cards.forEach(function(c){
+      var title=(c.querySelector('.pls-blog-h')||{}).textContent||'';
+      var ex=(c.querySelector('.pls-blog-excerpt')||{}).textContent||'';
+      c._h=expandSyn(fold(title+' '+ex));
+    });
+
+    function apply(){
+      var raw=input.value.trim(), terms=fold(raw).split(/\s+/).filter(Boolean);
+      var shownHrefs={};
+      cards.forEach(function(c){
+        var match=!terms.length||terms.every(function(t){ return c._h.indexOf(t)>=0; });
+        c.classList.toggle('pgb-hidden', !match);
+        if(match){ var a=c.querySelector('.pls-blog-h a'); shownHrefs[a?a.getAttribute('href'):Math.random()]=true; }
+      });
+      var shown=Object.keys(shownHrefs).length;
+      clearBtn.hidden=!raw;
+      if(shown===0){
+        emptyEl.style.display='';
+        countEl.innerHTML='<b>0</b> results';
+      }else{
+        emptyEl.style.display='none';
+        countEl.innerHTML=raw?'<b>'+shown+'</b> of '+uniqueTotal+' articles':'Showing all <b>'+uniqueTotal+'</b> articles';
+      }
+    }
+    input.addEventListener('input',apply);
+    clearBtn.addEventListener('click',function(){input.value='';apply();input.focus();});
+    if(resetBtn) resetBtn.addEventListener('click',function(){input.value='';apply();input.focus();});
+    document.addEventListener('keydown',function(e){
+      if(e.key==='/'&&document.activeElement!==input){e.preventDefault();input.focus();}
+      else if(e.key==='Escape'&&document.activeElement===input&&input.value){input.value='';apply();}
+    });
+    apply();
+    } // fin init()
+  })();
+  </script>
+</div>
