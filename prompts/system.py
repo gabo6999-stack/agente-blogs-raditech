@@ -66,7 +66,28 @@ ARTICLE STRUCTURE:
 6. REQUIRED FAQ SECTION at the end: <h2>Frequently Asked Questions</h2> followed by AT LEAST 4 pairs of <h3>Question?</h3><p>Concise answer</p>
    Do NOT write any JSON-LD / <script> schema yourself — the system builds the FAQPage schema automatically from these visible questions and answers. Just write the visible <h3>/<p> FAQ clearly and correctly.
 
+FOCUS KEYWORD — THE RULE THAT CARRIES THE MOST WEIGHT:
+Pick ONE short phrase (3-5 words) as `rank_math_focus_keyword` and write the article AROUND it.
+Rank Math looks for the **EXACT phrase, word for word**: if you pick "outsourced accounting property managers"
+but the text says "outsourced accounting *for* property managers", Rank Math counts ZERO occurrences.
+That exact mistake scored a real article 22/100.
+
+The exact phrase MUST appear, verbatim:
+1. In `rank_math_title`, ideally at the start
+2. In the `slug` (hyphenated)
+3. In `rank_math_description`
+4. In the FIRST paragraph of the content
+5. In at least one `<h2>`
+6. Spread through the body until it is between 0.5% and 2.5% of the word count
+   (in a 1,600-word article that is 8 to 13 literal occurrences)
+
+Choose the keyword BEFORE writing and check it sounds natural when repeated. If it does not fit naturally
+into an ordinary sentence, pick another one: a slightly plainer keyword you can repeat beats an elegant
+one you cannot use without sounding awkward.
+
 BEFORE SUBMITTING, VERIFY THE "content" MEETS ALL OF THIS (add anything missing before responding):
+- The exact focus keyword phrase in title, slug, description, first paragraph and at least one <h2>.
+- Between 8 and 13 literal occurrences of that phrase in the body (count them).
 - At least 3 internal <a> links to URLs from the internal pages list.
 - At least 2 external <a target="_blank" rel="noopener"> links to real, verified sources (this is often skipped — do NOT omit it!).
 - <h2>Frequently Asked Questions</h2> section with 4+ pairs of <h3>...?</h3><p>...</p>.
@@ -139,7 +160,27 @@ ESTRUCTURA DEL ARTÍCULO:
 6. SECCIÓN FAQ OBLIGATORIA al final: <h2>Preguntas frecuentes</h2> seguido de AL MENOS 4 pares <h3>¿Pregunta?</h3><p>Respuesta concisa</p>
    NO escribas ningún schema JSON-LD / <script> tú mismo — el sistema genera el schema FAQPage automáticamente a partir de estas preguntas y respuestas visibles. Solo redacta bien y con claridad la FAQ visible <h3>/<p>.
 
+FOCUS KEYWORD — LA REGLA QUE MÁS PESA:
+Elige UNA frase corta (3-5 palabras) como `rank_math_focus_keyword` y escribe el artículo ALREDEDOR de ella.
+Rank Math busca la **frase EXACTA, palabra por palabra**: si eliges "contabilidad para administradores" y el
+texto dice "contabilidad de administradores", para Rank Math NO aparece ni una sola vez.
+
+La frase exacta DEBE aparecer, tal cual:
+1. En el `rank_math_title`, y a ser posible al principio
+2. En el `slug` (con guiones)
+3. En la `rank_math_description`
+4. En el PRIMER párrafo del contenido
+5. En al menos un `<h2>`
+6. Repartida por el cuerpo hasta sumar entre el 0.5% y el 2.5% de las palabras
+   (en un artículo de 1.600 palabras son entre 8 y 13 apariciones literales)
+
+Elige la keyword ANTES de escribir y comprueba que suena natural repetida. Si no encaja con naturalidad
+en una frase corriente, elige otra: es preferible una keyword algo más simple que una elegante que luego
+no puedas repetir sin que chirríe.
+
 ANTES DE ENTREGAR, VERIFICA QUE EL "content" CUMPLA TODO ESTO (si falta algo, agrégalo antes de responder):
+- La frase exacta de la focus keyword en title, slug, description, primer párrafo y algún <h2>.
+- Entre 8 y 13 apariciones literales de esa frase en el cuerpo (cuéntalas).
 - Al menos 3 enlaces internos <a> a URLs de la lista de páginas internas.
 - Al menos 2 enlaces externos <a target="_blank" rel="noopener"> a fuentes reales verificadas (¡este suele faltar — NO lo omitas!).
 - Sección <h2>Preguntas frecuentes</h2> con 4+ pares <h3>¿…?</h3><p>…</p>.

@@ -139,4 +139,31 @@ def g08_rankmath_meta(site_key: str, blog_data: dict, exclude_id: int = None) ->
         reason="" if not choca else f"'{fk}' ya es focus keyword de los posts {choca}",
         details={"focus_keyword": fk, "posts": choca},
     ))
+
+    # G08g/h — la alineacion de la keyword con el texto. Es lo que mas puntos mueve
+    # en Rank Math y lo que hundio a los posts del agente: #318 saco 22/100 con la
+    # keyword 'outsourced accounting property managers' apareciendo CERO veces en
+    # 2.349 palabras, porque el articulo decia "outsourced accounting *for* property
+    # managers". Rank Math exige la frase exacta.
+    from tools.keyword_align import analizar
+    a = analizar(blog_data)
+    criticos = ("titulo_seo", "slug", "descripcion", "primer_10_por_ciento", "cuerpo")
+    faltan = [k for k in criticos if not a["presencia"][k]]
+    out.append(GateResult(
+        "G08g", "La focus keyword aparece LITERAL en título, slug, descripción y primer 10%",
+        passed=not faltan,
+        reason="" if not faltan else
+               f"'{fk}' no aparece (frase exacta) en: {', '.join(faltan)}. "
+               f"{a['apariciones']} apariciones en {a['palabras']} palabras",
+        details=a,
+    ))
+    out.append(GateResult(
+        "G08h", "Densidad de la focus keyword entre 0.5% y 2.5%",
+        passed=0.5 <= a["densidad"] <= 2.5,
+        reason="" if 0.5 <= a["densidad"] <= 2.5 else
+               f"densidad {a['densidad']}% ({a['apariciones']} apariciones en {a['palabras']} "
+               f"palabras; se buscan ~{a['objetivo_apariciones']})",
+        details={"densidad": a["densidad"], "apariciones": a["apariciones"],
+                 "objetivo": a["objetivo_apariciones"]},
+    ))
     return out

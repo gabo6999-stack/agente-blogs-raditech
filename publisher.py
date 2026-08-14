@@ -141,6 +141,34 @@ def run_guarded_pipeline(site_key: str, topic: str = None, *, dry_run: bool = Fa
         rep.extend(g05_single_h1(blog_data["content"]))
         rep.extend(g07_valid_html(blog_data["content"]))
 
+        # ── Alineación de la focus keyword, ANTES de tocar WordPress ─────────
+        # Es lo que más puntos mueve en Rank Math y lo que hundió a los posts del
+        # agente (#318 sacó 22/100 con la keyword apareciendo cero veces en 2.349
+        # palabras). Se corrige aquí, con una llamada barata a Claude, en vez de
+        # descubrirlo en la compuerta 1 tras gastar una sesión de navegador.
+        print("\n[kw] Alineación de la focus keyword")
+        from tools.keyword_align import analizar, instrucciones
+        for intento_kw in range(1, 3):
+            a = analizar(blog_data)
+            print(f"  '{a['keyword']}': {a['apariciones']} apariciones en {a['palabras']} "
+                  f"palabras (densidad {a['densidad']}%)")
+            if a["alineada"]:
+                break
+            for d in a["deficits"]:
+                print(f"    falta: {d[:110]}")
+            if intento_kw == 2:
+                break
+            from tools.writer import improve_blog
+            mejor = improve_blog(site_key, blog_data, instrucciones(a), score_actual=None)
+            if not mejor:
+                break
+            mejor["content"], _ = sanitize(mejor.get("content", ""), mejor.get("title", ""))
+            blog_data.update(mejor)
+        rep.add(GateResult(
+            "KW", "Focus keyword alineada con el texto", passed=a["alineada"], blocking=False,
+            reason="alineada" if a["alineada"] else "; ".join(a["deficits"])[:300],
+            details=a))
+
         print("\n[8] Metadata de Rank Math")
         rep.extend(g08_rankmath_meta(site_key, blog_data))
 
