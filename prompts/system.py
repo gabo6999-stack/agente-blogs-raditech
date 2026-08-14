@@ -85,6 +85,19 @@ Choose the keyword BEFORE writing and check it sounds natural when repeated. If 
 into an ordinary sentence, pick another one: a slightly plainer keyword you can repeat beats an elegant
 one you cannot use without sounding awkward.
 
+PREFER A SHORT KEYWORD — 2 or 3 words. Measured on real articles from this site:
+
+  "bank reconciliation"                  2 words, 1,028-word article, 14 uses (1.36%)  -> scored 83
+  "property management accounting help"  4 words, 2,326-word article,  1 use  (0.04%)  -> scored 30
+  "HOA condo financial statements"       4 words, 2,710-word article,  0 uses (0.00%)  -> scored 64
+
+A four-word phrase is almost impossible to repeat a dozen times without the prose turning robotic, so it
+ends up appearing once or not at all. Two words fit anywhere.
+
+LENGTH MATTERS FOR THE SAME REASON: density is a percentage, so a 2,700-word article needs ~22 literal
+occurrences while a 1,000-word one needs ~8. Stay near the target length — a tight article is far easier
+to score than a long one, and it ranks better anyway.
+
 BEFORE SUBMITTING, VERIFY THE "content" MEETS ALL OF THIS (add anything missing before responding):
 - The exact focus keyword phrase in title, slug, description, first paragraph and at least one <h2>.
 - Between 8 and 13 literal occurrences of that phrase in the body (count them).
@@ -177,6 +190,19 @@ La frase exacta DEBE aparecer, tal cual:
 Elige la keyword ANTES de escribir y comprueba que suena natural repetida. Si no encaja con naturalidad
 en una frase corriente, elige otra: es preferible una keyword algo más simple que una elegante que luego
 no puedas repetir sin que chirríe.
+
+PREFIERE UNA KEYWORD CORTA — de 2 o 3 palabras. Medido sobre artículos reales:
+
+  "bank reconciliation"                  2 palabras, artículo de 1.028, 14 usos (1,36%)  -> sacó 83
+  "property management accounting help"  4 palabras, artículo de 2.326,  1 uso  (0,04%)  -> sacó 30
+  "HOA condo financial statements"       4 palabras, artículo de 2.710,  0 usos (0,00%)  -> sacó 64
+
+Una frase de cuatro palabras es casi imposible de repetir una docena de veces sin que el texto suene a
+robot, así que acaba apareciendo una vez o ninguna. Con dos palabras cabe en cualquier sitio.
+
+LA LONGITUD IMPORTA POR LO MISMO: la densidad es un porcentaje, así que un artículo de 2.700 palabras
+necesita ~22 apariciones literales y uno de 1.000 solo ~8. Cíñete a la longitud objetivo — un artículo
+ajustado puntúa mucho más fácil que uno largo, y además posiciona mejor.
 
 ANTES DE ENTREGAR, VERIFICA QUE EL "content" CUMPLA TODO ESTO (si falta algo, agrégalo antes de responder):
 - La frase exacta de la focus keyword en title, slug, description, primer párrafo y algún <h2>.
