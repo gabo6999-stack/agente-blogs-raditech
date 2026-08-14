@@ -3,36 +3,21 @@
   "_comentario": [
     "Railway ya NO usa Nixpacks: el build corre sobre Railpack",
     "(ghcr.io/railwayapp/railpack-builder). Un nixpacks.toml se ignora en silencio,",
-    "que es exactamente lo que pasó en el primer despliegue del 14-ago-2026: el build",
-    "no instaló Chromium y GET /health/browser devolvió",
+    "que es lo que paso en el primer despliegue del 14-ago-2026: el build no instalo",
+    "Chromium y GET /health/browser lo dijo en una peticion:",
     "  {paquete:true, lanza:false, browsers_path:null,",
-    "   error:'Chromium no está descargado'}",
+    "   error:'Chromium no esta descargado'}",
     "",
-    "La compuerta 1 necesita un navegador de verdad porque la puntuación de Rank Math",
-    "se calcula en JavaScript dentro del editor de bloques y no existe del lado del",
-    "servidor. Sin navegador, la compuerta falla y el agente no publica nada.",
+    "La instalacion NO se hace desde aqui: Railpack trae soporte propio para",
+    "Playwright y se activa con la variable de servicio",
+    "  RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1",
+    "que descarga el navegador Y resuelve las librerias del sistema. El propio log",
+    "del build lo sugiere. Es preferible a declarar la lista de paquetes apt a mano,",
+    "porque los nombres cambian entre distros (libasound2 -> libasound2t64 en 24.04).",
     "",
-    "Los mismos ajustes están además como variables del servicio en Railway",
-    "(RAILPACK_BUILD_CMD, RAILPACK_BUILD_APT_PACKAGES, RAILPACK_DEPLOY_APT_PACKAGES,",
-    "PLAYWRIGHT_BROWSERS_PATH), que es lo que se aplicó primero para poder verificarlo",
-    "en caliente. Este archivo deja la configuración en el repo.",
-    "",
-    "PLAYWRIGHT_BROWSERS_PATH tiene que apuntar dentro de /app: es lo único que el",
-    "builder copia a la imagen final. La caché por defecto (~/.cache/ms-playwright) se",
-    "queda en la etapa de build y desaparece."
-  ],
-  "buildAptPackages": [
-    "libnss3", "libnspr4", "libatk1.0-0", "libatk-bridge2.0-0", "libcups2",
-    "libdrm2", "libxkbcommon0", "libxcomposite1", "libxdamage1", "libxfixes3",
-    "libxrandr2", "libgbm1", "libpango-1.0-0", "libcairo2", "libasound2",
-    "libatspi2.0-0", "fonts-liberation"
-  ],
-  "deploy": {
-    "aptPackages": [
-      "libnss3", "libnspr4", "libatk1.0-0", "libatk-bridge2.0-0", "libcups2",
-      "libdrm2", "libxkbcommon0", "libxcomposite1", "libxdamage1", "libxfixes3",
-      "libxrandr2", "libgbm1", "libpango-1.0-0", "libcairo2", "libasound2",
-      "libatspi2.0-0", "fonts-liberation"
-    ]
-  }
+    "Por que hace falta: la compuerta 1 necesita un navegador de verdad, porque la",
+    "puntuacion de Rank Math se calcula en JavaScript dentro del editor de bloques y",
+    "no existe del lado del servidor. Sin navegador la compuerta falla y el agente no",
+    "publica nada. Se verifica con GET /health/browser."
+  ]
 }
