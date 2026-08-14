@@ -107,10 +107,13 @@ def read_score(site_key: str, post_id: int, headless: bool = True) -> dict:
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=headless)
-        ctx = browser.new_context(viewport={"width": 1600, "height": 1200},
-                                  user_agent=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                              "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                              "Chrome/120.0.0.0 Safari/537.36"))
+        # NO se fija user_agent a mano. Se probo con la cadena de Chrome 120 y el
+        # WAF de propertyledger.us respondia 403 hasta en /wp-login.php, con lo que
+        # ni siquiera aparecia el campo #user_login. El User-Agent propio del
+        # navegador real de Playwright pasa sin problema en los cuatro sitios.
+        # (Es el mismo 403 selectivo documentado en tools/http.py, y por eso alli
+        # las verificaciones van con el UA de Googlebot.)
+        ctx = browser.new_context(viewport={"width": 1600, "height": 1200})
         page = ctx.new_page()
         page.set_default_timeout(NAV_TIMEOUT_MS)
         try:

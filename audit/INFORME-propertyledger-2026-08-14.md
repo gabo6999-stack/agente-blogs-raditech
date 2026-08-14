@@ -299,26 +299,51 @@ Cada compuerta devuelve un `GateResult` con `passed`, `reason` y la evidencia cr
 
 ### 7.1. La compuerta 1, probada en vivo
 
-Se validó contra **raditech.mx** (es el único sitio con la contraseña real de la cuenta configurada;
-para propertyledger falta `SITE4_WP_LOGIN_PASSWORD`). Salida literal:
+Validada en los dos sitios, con la contraseña real de la cuenta (`SITE*_WP_LOGIN_PASSWORD`).
+Salida literal:
 
 ```
+--- propertyledger post #129 (borrador) ---
+  meta rank_math_seo_score en la BD : '72'
+  score leido del editor            : 75
+  compuerta G01                     : FALLA -- Rank Math devolvio 75/100 — por debajo de 81
+
+--- propertyledger post #115 (borrador) ---
+  meta rank_math_seo_score en la BD : '75'
+  score leido del editor            : 75
+  compuerta G01                     : FALLA -- Rank Math devolvio 75/100 — por debajo de 81
+
 --- raditech post #1152 ---
   meta rank_math_seo_score en la BD : ''
   score leido del editor            : 75
-  metodo                            : wp.data.select('rank-math').getAnalysisScore()
 
 --- raditech post #1148 ---
   meta rank_math_seo_score en la BD : ''
   score leido del editor            : 68
-  metodo                            : wp.data.select('rank-math').getAnalysisScore()
 ```
 
-**Esto cierra el hallazgo técnico de raíz.** Los dos posts tienen el meta VACÍO en la base de datos y
-sin embargo el editor calcula 75 y 68. La puntuación existe; simplemente no se persiste hasta que
-alguien abre el editor. Ahora el agente la lee.
+Todas por `wp.data.select('rank-math').getAnalysisScore()`.
 
-Tres cosas que sólo se descubren probándolo, y que estaban mal en la primera implementación:
+**Esto cierra el hallazgo técnico de raíz.** Los posts de raditech tienen el meta VACÍO y el editor
+calcula 75 y 68: la puntuación existe, simplemente no se persiste hasta que alguien abre el editor.
+
+Y aparece un matiz que sólo se ve comparando las dos fuentes: **el meta guardado puede estar rancio**.
+El post #129 tiene `72` en la base y el análisis en vivo da `75` — el contenido cambió después de la
+última vez que alguien abrió el editor. Leer el meta por REST no sólo falla cuando está vacío: cuando
+tiene valor, ese valor puede no corresponder al contenido actual. Por eso la compuerta abre el editor
+siempre, en vez de confiar en el meta.
+
+La captura que se guarda con el reporte (post #129) muestra el panel completo: la focus keyword
+`hoa and condo accounting glossary`, "Basic SEO ✓ All Good" con sus seis comprobaciones, y los
+contadores "Additional: 2 Errors", "Title Readability: 2 Errors", "Content Readability: 1 Errors".
+
+Cuatro cosas que sólo se descubren probándolo, y que estaban mal en la primera implementación:
+
+0. **No hay que fijar el `user_agent` a mano.** Con la cadena de Chrome 120, el WAF de
+   propertyledger.us respondía 403 hasta en `/wp-login.php`, así que ni siquiera aparecía el campo
+   `#user_login` y la compuerta moría con un timeout que parecía un problema de credenciales. El
+   User-Agent propio del navegador real de Playwright pasa sin problema en los cuatro sitios. Es el
+   mismo 403 selectivo del §5.3, mordiendo por otro sitio.
 
 1. **El selector correcto es `getAnalysisScore()`, no `getScore()`.** El store `rank-math` expone
    `getAnalysisScore / getKeywords / getSelectedKeyword / getShowScoreFrontend`. `getScore()` no existe
@@ -358,18 +383,19 @@ POST /publish {dry_run:true}  corre las compuertas y se detiene antes de crear e
 
 ## 8. Pendientes que necesitan una decisión
 
-1. **`SITE4_WP_LOGIN_PASSWORD` — es lo único que falta para cerrar la compuerta 1 en propertyledger.**
-   El mecanismo ya está probado (§7.1), pero `wp-login.php` **no acepta contraseñas de aplicación** y
-   la credencial configurada para propertyledger es de aplicación (formato de 6 grupos de 4).
-   Basta añadir al `.env` (y a Railway) una línea con la contraseña real de la cuenta `GavitoA` en
-   propertyledger.us:
+1. **`SITE4_WP_LOGIN_PASSWORD` — resuelto en local, falta en Railway.** Ya está en el `.env` local y
+   la compuerta 1 se validó contra propertyledger (§7.1). Hay que replicar la variable en Railway:
 
    ```
    SITE4_WP_LOGIN_PASSWORD=<contraseña real de GavitoA en propertyledger.us>
    ```
 
-   Sin ella la compuerta 1 falla siempre y el agente no publica. El código lo detecta y lo dice con
-   ese mensaje exacto en vez de dejarlo pasar.
+   `wp-login.php` **no acepta contraseñas de aplicación**. Sin esta variable la compuerta 1 falla
+   siempre y el agente no publica; el código lo detecta y lo dice con ese mensaje exacto en vez de
+   dejarlo pasar.
+
+   **Nota de seguridad:** la contraseña de `GavitoA` es la misma en raditech.mx y en propertyledger.us.
+   Un compromiso de una cuenta da acceso a las dos. Conviene separarlas.
 
 2. **`DATA_DIR` en Railway.** Montar un volumen y exportar `DATA_DIR=/data`. Sin esto el índice de temas y el registro de imágenes se pierden en cada redeploy, que es la raíz de los duplicados.
 
