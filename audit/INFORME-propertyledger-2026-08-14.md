@@ -213,6 +213,55 @@ No es saturación: 12 peticiones seguidas a la home dieron `[200 × 12]` con lat
 
 Consecuencia de diseño: **el verificador de enlaces usa el User-Agent de Googlebot**. Con un UA de navegador marcaría como rotos enlaces que Google ve perfectamente.
 
+### 5.4. La causa real de los duplicados del agente: publicar y reportarlo como fallo
+
+**Corrección a una versión anterior de este informe.** Escribí que el estado del agente era efímero
+porque `DATA_DIR` no estaba configurado en Railway. **Es falso:** el servicio ya tiene el volumen
+`web-volume` montado en `/data` y `DATA_DIR=/data` desde antes de esta auditoría. El historial nunca
+se perdió. La causa es otra y está mejor documentada.
+
+Historial real del agente, leído de su propio endpoint `/history` (que lee el volumen):
+
+```
+  ok  2026-07-28T09:02  Commingling of funds: the trust accounting mistake that gets property managers
+  ERR 2026-07-29T09:03  Security deposit accounting for property managers: compliance and best practic
+  ERR 2026-07-30T09:03  Security deposit accounting for property managers: compliance and best practic
+  ok  2026-07-31T09:07  Security deposit accounting for property managers: compliance and best practic
+  ok  2026-08-03T09:08  How to do trust accounting in QuickBooks for property management
+  ERR 2026-08-04T09:03  Setting up a property management chart of accounts the right way
+  ok  2026-08-05T09:03  Setting up a property management chart of accounts the right way
+```
+
+Contrastado con lo que hay realmente publicado:
+
+| Fecha | El agente registró | Pero en WordPress existe |
+|---|---|---|
+| 30-jul | **ERR** | post **#210**, "Security Deposit Accounting for Property Managers: Compliance and Best Practices" |
+| 31-jul | ok | post **#212**, mismo título, slug `...-best-practices-2` |
+| 4-ago | **ERR** | post **#219**, "Setting Up a Property Management Chart of Accounts the Right Way" |
+| 5-ago | ok | post **#221**, mismo título |
+
+**El post sí se creaba, y aun así se registraba como fallo.** El mecanismo está en `publish_post`: un
+único `try` envolvía la creación del post *y* los pasos posteriores de metadata, y devolvía `None` ante
+cualquier excepción — incluidas las que ocurren cuando el post **ya existe** en WordPress. El llamador
+interpretaba ese `None` como "no se creó nada", registraba `success=False`, el tema no entraba en
+`get_used_topics()`, y al día siguiente el agente lo volvía a escoger y lo publicaba otra vez. WordPress
+le puso el sufijo `-2`.
+
+Encontré **la misma familia de bug en mi propio `create_draft`** y la corregí: ahora el `try` cubre solo
+la creación, y un fallo posterior se reporta sin devolver nunca `None`.
+
+Aparte, **la cola curada trae duplicados de fábrica**. Los temas 8 y 22 son el mismo artículo:
+
+```
+   8. Security deposit accounting for property managers: compliance and best practices
+  22. Security deposit accounting: state compliance for property managers
+```
+
+Y los temas 3 y 16 (`bookkeeping vs. accounting` / `accounting vs. real estate bookkeeping`) también.
+La deduplicación era por igualdad exacta de la cadena del tema, así que no los veía. La compuerta 3
+compara título normalizado, H1, focus keyword y solape de H2, y sí los detiene.
+
 ### Sobre el 5xx de Search Console
 
 **No se reprodujo ningún 5xx.** Ni con UA de navegador ni con UA de Googlebot, en ninguna de las ~60 peticiones de esta auditoría. Lo que sí se midió es el 403 selectivo de arriba y dos 404 reales. No puedo confirmar ni descartar lo que reportó Search Console el 13 de agosto; sólo puedo decir que hoy, desde aquí, no ocurre. El chequeo de salud previo queda implementado y detectará el 5xx si vuelve.
@@ -287,7 +336,7 @@ Cada compuerta devuelve un `GateResult` con `passed`, `reason` y la evidencia cr
 
 ### Piezas nuevas
 
-- **`tools/store.py`** — estado persistente. `tools/logger.py` escribía en `DATA_DIR` con default `.`, y `logs/` está en `.gitignore`: en Railway sin volumen, **el historial se borraba en cada redeploy**. Por eso el agente reescribía temas ya publicados (el `-2` del post #212). Ahora `DATA_DIR` debe apuntar a un volumen y el agente **avisa a gritos** si no lo está.
+- **`tools/store.py`** — estado persistente, con escritura atómica, y aviso si `DATA_DIR` no está configurado. (En este proyecto **ya lo estaba** — ver §5.4.)
 - **`tools/topic_index.py`** — índice de temas por sitio (título, H1, focus keyword, H2), reconstruible desde WordPress. Normaliza colapsando cadenas repetidas del tipo `X + X`.
 - **`tools/image_registry.py`** — registro por SHA-256 + nombre de archivo + dimensiones.
 - **`tools/http.py`** — todas las verificaciones sin seguir redirecciones y con UA de Googlebot.
@@ -383,21 +432,17 @@ POST /publish {dry_run:true}  corre las compuertas y se detiene antes de crear e
 
 ## 8. Pendientes que necesitan una decisión
 
-1. **`SITE4_WP_LOGIN_PASSWORD` — resuelto en local, falta en Railway.** Ya está en el `.env` local y
-   la compuerta 1 se validó contra propertyledger (§7.1). Hay que replicar la variable en Railway:
-
-   ```
-   SITE4_WP_LOGIN_PASSWORD=<contraseña real de GavitoA en propertyledger.us>
-   ```
-
-   `wp-login.php` **no acepta contraseñas de aplicación**. Sin esta variable la compuerta 1 falla
-   siempre y el agente no publica; el código lo detecta y lo dice con ese mensaje exacto en vez de
-   dejarlo pasar.
+1. **`SITE4_WP_LOGIN_PASSWORD` — resuelto.** Está en el `.env` local y en Railway (servicio `web`,
+   entorno `production`; se verificó comparando el hash de ambos valores). La compuerta 1 quedó
+   validada contra propertyledger (§7.1). `wp-login.php` **no acepta contraseñas de aplicación**, y sin
+   esta variable la compuerta 1 falla y el agente no publica.
 
    **Nota de seguridad:** la contraseña de `GavitoA` es la misma en raditech.mx y en propertyledger.us.
    Un compromiso de una cuenta da acceso a las dos. Conviene separarlas.
 
-2. **`DATA_DIR` en Railway.** Montar un volumen y exportar `DATA_DIR=/data`. Sin esto el índice de temas y el registro de imágenes se pierden en cada redeploy, que es la raíz de los duplicados.
+2. **`DATA_DIR` en Railway — ya estaba hecho.** El servicio `web` tiene el volumen `web-volume`
+   montado en `/data` y `DATA_DIR=/data`. No hay nada que configurar. (Una versión anterior de este
+   informe decía lo contrario; ver §5.4.)
 
 3. **El umbral de 81 — decidido: se mantiene estricto.** Ningún post del sitio lo ha alcanzado nunca
    (máximo histórico: 80; mediana 76). Consecuencia asumida: el agente dejará los artículos en borrador

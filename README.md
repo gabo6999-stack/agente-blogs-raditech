@@ -56,8 +56,8 @@ RANKMATH_PREFILTER_MIN=70                           umbral del pre-filtro barato
 ```
 
 **`DATA_DIR` no es opcional.** Sin un volumen montado, el índice de temas y el registro de imágenes
-se borran en cada redeploy y el agente vuelve a escribir artículos que ya publicó. El agente avisa
-al arrancar si detecta que no está configurado.
+se borran en cada redeploy. El agente avisa al arrancar si detecta que no está configurado.
+(En Railway ya está: volumen `web-volume` montado en `/data`.)
 
 **`SITE*_WP_LOGIN_PASSWORD`**: `wp-login.php` no acepta contraseñas de aplicación, y el editor de
 bloques sólo carga con sesión de wp-admin. Sin esta variable la compuerta 1 falla siempre y no se
@@ -102,3 +102,8 @@ la puntuación real de Rank Math, la captura del panel, y cada URL verificada co
 - **La puntuación de Rank Math no existe del lado del servidor**: se calcula en JS en el editor.
 - **`last_used` de las contraseñas de aplicación sólo se actualiza una vez cada 24 h**, así que no
   sirve para descartar el uso de una llave dentro de esa ventana.
+- **Nunca envolver la creación del post y los pasos posteriores en el mismo `try`.** Devolver `None`
+  cuando el post ya existe hace que el agente crea que no publicó nada y reintente el mismo tema al
+  día siguiente: así nacieron los slugs con sufijo `-2`. Ver `create_draft`.
+- **No fijar el `user_agent` a mano en Playwright**: con la cadena de Chrome 120, el WAF de
+  propertyledger devuelve 403 hasta en `/wp-login.php`.

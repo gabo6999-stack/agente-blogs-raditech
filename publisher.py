@@ -209,6 +209,9 @@ def run_guarded_pipeline(site_key: str, topic: str = None, *, dry_run: bool = Fa
             rep.add(GateResult("WP", "Creación del borrador", passed=False,
                                reason=creado["error"]))
             return salir()
+        if creado.get("meta_error"):
+            rep.add(GateResult("WP-meta", "Metadata de Rank Math tras crear el borrador",
+                               passed=False, blocking=False, reason=creado["meta_error"]))
 
         # ── 4. Slug REAL devuelto por WordPress ──────────────────────────────
         print("\n[4] Slug real asignado por WordPress")

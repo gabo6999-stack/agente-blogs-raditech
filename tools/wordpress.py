@@ -174,21 +174,45 @@ def create_draft(site_key: str, blog_data: dict, featured_media_id: int = None) 
         if tag_ids:
             payload["tags"] = tag_ids
 
+    # El try cubre SOLO la creación. Todo lo que venga después va en su propio try.
+    #
+    # Por qué importa tanto: en `publish_post` (la versión anterior) un único try
+    # envolvía la creación Y los pasos posteriores de metadata, y devolvía None ante
+    # cualquier fallo — incluidos los que ocurren cuando el post YA existe en
+    # WordPress. El llamador interpretaba None como "no se creó nada", registraba
+    # `success=False` y al día siguiente volvía a escoger el mismo tema. Historial
+    # real del agente en propertyledger:
+    #
+    #     ERR 2026-07-30  Security deposit accounting for property managers...
+    #     ok  2026-07-31  Security deposit accounting for property managers...
+    #
+    # El post #210 existe con fecha 30-jul y el #212 del 31-jul es el que WordPress
+    # bautizó con sufijo `-2`. Igual con el chart of accounts: ERR 4-ago (post #219
+    # creado) y ok 5-ago (post #221). Esa es la fuente real de los duplicados del
+    # agente, no un log que se perdiera.
     try:
         r = requests.post(f"{wp_url}/wp-json/wp/v2/posts", headers=headers,
                           json=payload, timeout=40)
         r.raise_for_status()
         post = r.json()
-        print(f"[WP] Borrador creado #{post['id']} slug='{post.get('slug')}'")
-
-        set_rankmath_meta(wp_url, headers, post["id"], blog_data)
-        return {"post": post, "error": "", "category_error": cat_error}
     except Exception as e:
         detalle = ""
         if hasattr(e, "response") and e.response is not None:
             detalle = e.response.text[:500]
         print(f"[WP] Error creando borrador: {e} {detalle}")
         return {"post": None, "error": f"{e} {detalle}".strip(), "category_error": cat_error}
+
+    print(f"[WP] Borrador creado #{post.get('id')} slug='{post.get('slug')}'")
+    meta_error = ""
+    try:
+        set_rankmath_meta(wp_url, headers, post["id"], blog_data)
+    except Exception as e:
+        # El borrador ya existe: se reporta el fallo pero NUNCA se devuelve None,
+        # o el agente creería que no publicó nada y lo reintentaría mañana.
+        meta_error = f"el borrador #{post.get('id')} se creó pero falló set_rankmath_meta: {e}"
+        print(f"[WP] {meta_error}")
+
+    return {"post": post, "error": "", "category_error": cat_error, "meta_error": meta_error}
 
 
 def promote_to_publish(site_key: str, post_id: int) -> dict | None:
