@@ -140,6 +140,91 @@ Responde únicamente con el JSON corregido."""
         raise
 
 
+def improve_blog(site_key: str, blog_data: dict, fallos: str, score_actual: int = None) -> dict | None:
+    """Itera un artículo que se quedó corto de puntuación (compuerta 1).
+
+    Solo se llama cuando Rank Math devolvió entre 70 y 80: ahí el problema es de
+    retoque y vale la pena reintentar (máximo 3 veces). Por debajo de 70 el
+    problema es de fondo y el post se queda en borrador.
+    """
+    site = SITES[site_key]
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    language = site.get("language", "es")
+
+    if language == "en":
+        system_prompt = f"""You are an SEO editor for {site['niche']}.
+Improve the article so it scores higher in Rank Math, WITHOUT padding it and WITHOUT
+changing the topic. Fix exactly the failing checks listed by the editor.
+
+HARD RULES:
+- Do NOT put an <h1> in the content. The template renders the H1 from the post title.
+- Every <li> must sit inside a <ul> or <ol>.
+- Keep at least 3 internal links and 2 external links already present — do not invent new URLs.
+- Do not add inline style attributes and do not write any <script>/JSON-LD.
+- Keep the FAQ section (<h2>Frequently Asked Questions</h2> + 4 <h3>/<p> pairs).
+
+RESPONSE FORMAT — valid JSON, metadata first and "content" LAST:
+{{
+  "title": "...", "slug": "...", "rank_math_title": "max 60 chars",
+  "rank_math_description": "150-160 chars", "rank_math_focus_keyword": "one keyword",
+  "tags": ["..."], "category": "...", "excerpt": "...", "content": "full HTML (LAST)"
+}}
+No text outside the JSON."""
+    else:
+        system_prompt = f"""Eres un editor SEO especializado en {site['niche']}.
+Mejora el artículo para que puntúe más alto en Rank Math, SIN rellenar y SIN cambiar
+el tema. Corrige exactamente los checks que el editor marca como fallidos.
+
+REGLAS DURAS:
+- NO pongas ningún <h1> en el content. La plantilla genera el H1 desde el título.
+- Todo <li> debe ir dentro de un <ul> o <ol>.
+- Conserva los 3 enlaces internos y 2 externos que ya trae — no inventes URLs nuevas.
+- Sin atributos style en línea y sin escribir ningún <script>/JSON-LD.
+- Conserva la FAQ (<h2>Preguntas frecuentes</h2> + 4 pares <h3>/<p>).
+
+FORMATO DE RESPUESTA — JSON válido, metadata primero y "content" AL FINAL:
+{{
+  "title": "...", "slug": "...", "rank_math_title": "máx 60 caracteres",
+  "rank_math_description": "150-160 caracteres", "rank_math_focus_keyword": "una keyword",
+  "tags": ["..."], "category": "...", "excerpt": "...", "content": "HTML completo (AL FINAL)"
+}}
+No agregues texto fuera del JSON."""
+
+    user_message = f"""Rank Math le dio {score_actual}/100 a este artículo y necesita al menos 81.
+
+CHECKS QUE ESTÁN FALLANDO (los de más peso primero):
+{fallos}
+
+ARTÍCULO ACTUAL:
+Título: {blog_data.get('title', '')}
+Meta title: {blog_data.get('rank_math_title', '')}
+Meta description: {blog_data.get('rank_math_description', '')}
+Focus keyword: {blog_data.get('rank_math_focus_keyword', '')}
+Slug: {blog_data.get('slug', '')}
+
+CONTENIDO:
+{blog_data.get('content', '')}
+
+Responde solo con el JSON corregido."""
+
+    print(f"[Writer] Iterando el artículo (Rank Math dio {score_actual})")
+    try:
+        response = client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=20000,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_message}],
+        )
+        full_text = "".join(b.text for b in response.content if hasattr(b, "text"))
+        mejor = _parse_json(full_text)
+        if mejor.get("content"):
+            mejor["content"] = rebuild_faq_jsonld(mejor["content"])
+        return mejor
+    except Exception as e:
+        print(f"[Writer] No se pudo iterar el artículo: {e}")
+        return None
+
+
 def generate_blog(site_key: str, topic: str) -> dict:
     """
     Usa Claude con web_search para investigar y escribir el blog completo.

@@ -4,3 +4,10 @@ logs/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Estado del agente: índice de temas, registro de imágenes, reportes y capturas.
+# En producción vive en el volumen ($DATA_DIR), no en el repo.
+state/
+
+# Volcados de la auditoría: llevan contenido y metadatos del sitio en crudo.
+audit/evidence/

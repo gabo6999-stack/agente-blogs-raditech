@@ -7,3 +7,7 @@ pytrends>=4.9.2
 woocommerce>=3.0.0
 fastapi>=0.110.0
 uvicorn>=0.27.0
+# Compuerta 1: la puntuación de Rank Math se calcula en JS dentro del editor de
+# bloques, no existe del lado del servidor. Leerla obliga a abrir el post en un
+# navegador real. Tras instalar hace falta además:  python -m playwright install chromium
+playwright>=1.44.0

@@ -1,3 +1,5 @@
+import html
+import re
 import uuid
 import requests
 from requests.auth import HTTPBasicAuth
@@ -5,45 +7,84 @@ from config import SITES
 from tools.faq_schema import extract_visible_faq
 
 
-def get_wp_headers(site_key: str) -> tuple[str, dict]:
+# Cabeceras ya resueltas por sitio: {site_key: (wp_url, headers, caducidad)}
+_HEADER_CACHE: dict[str, tuple] = {}
+_SIN_JWT: set[str] = set()      # sitios cuyo endpoint JWT no existe
+_CACHE_TTL_S = 1800             # 30 min; los JWT de WP duran mucho más
+
+
+def _basic_headers(site: dict) -> dict:
+    import base64
+    cred = base64.b64encode(f"{site['wp_user']}:{site['wp_password']}".encode()).decode()
+    return {"Authorization": f"Basic {cred}", "Content-Type": "application/json"}
+
+
+def get_wp_headers(site_key: str, forzar: bool = False) -> tuple[str, dict]:
+    """URL base y cabeceras de autenticación para WordPress, cacheadas por sitio.
+
+    Antes esto hacía un POST a /wp-json/jwt-auth/v1/token en CADA llamada a
+    WordPress, sin try. Dos problemas serios:
+
+    1. En propertyledger.us el plugin JWT no está instalado y ese endpoint responde
+       404 siempre: un viaje de ida y vuelta desperdiciado por cada operación, contra
+       un edge que ya es lento e intermitente.
+    2. Si la petición fallaba, la excepción subía sin capturar y tumbaba la corrida
+       entera. Es lo que pasó el 14-ago-2026 a las 09:07:
+
+           HTTPSConnectionPool(host='propertyledger.us', port=443):
+           Read timed out. (read timeout=15)
+
+       Un timeout en una sonda opcional dejó al agente sin publicar ese día. Y una
+       corrida que muere a mitad es justo lo que deja posts huérfanos.
+
+    Ahora: se cachean las cabeceras 30 minutos, se recuerda qué sitios no tienen JWT
+    para no volver a sondearlos, y un fallo de la sonda cae a Basic Auth en vez de
+    propagar. Basic Auth con contraseña de aplicación funciona en los cuatro sitios.
     """
-    Retorna la URL base y headers de autenticación para WordPress.
-    """
+    import time
+
     site = SITES[site_key]
     wp_url = site["wp_url"]
-    
-    # Autenticación básica (funciona con Application Passwords de WP)
-    auth = HTTPBasicAuth(site["wp_user"], site["wp_password"])
-    
-    # Obtener JWT token
-    token_response = requests.post(
-        f"{wp_url}/wp-json/jwt-auth/v1/token",
-        json={
-            "username": site["wp_user"],
-            "password": site["wp_password"]
-        },
-        timeout=15
-    )
-    
-    if token_response.status_code == 200:
-        token = token_response.json().get("token")
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        }
-    else:
-        # Fallback a Basic Auth si JWT falla
-        print("[WP] JWT falló, usando Basic Auth")
-        import base64
-        credentials = base64.b64encode(
-            f"{site['wp_user']}:{site['wp_password']}".encode()
-        ).decode()
-        headers = {
-            "Authorization": f"Basic {credentials}",
-            "Content-Type": "application/json"
-        }
-    
+
+    if not forzar:
+        cacheado = _HEADER_CACHE.get(site_key)
+        if cacheado and cacheado[2] > time.time():
+            return cacheado[0], cacheado[1]
+
+    headers = None
+    if site_key not in _SIN_JWT:
+        try:
+            r = requests.post(f"{wp_url}/wp-json/jwt-auth/v1/token",
+                              json={"username": site["wp_user"],
+                                    "password": site["wp_password"]},
+                              timeout=15)
+            if r.status_code == 200 and r.json().get("token"):
+                headers = {"Authorization": f"Bearer {r.json()['token']}",
+                           "Content-Type": "application/json"}
+            else:
+                if r.status_code == 404:
+                    _SIN_JWT.add(site_key)
+                    print(f"[WP] {site_key}: sin plugin JWT (404); se usa Basic Auth "
+                          f"y no se vuelve a sondear")
+                else:
+                    print(f"[WP] {site_key}: JWT devolvió {r.status_code}; se usa Basic Auth")
+        except Exception as e:
+            # La sonda es opcional: nunca debe tumbar la corrida.
+            print(f"[WP] {site_key}: la sonda JWT falló ({e}); se usa Basic Auth")
+
+    if headers is None:
+        headers = _basic_headers(site)
+
+    _HEADER_CACHE[site_key] = (wp_url, headers, time.time() + _CACHE_TTL_S)
     return wp_url, headers
+
+
+def limpiar_cache_headers(site_key: str = None):
+    """Invalida las cabeceras cacheadas (p. ej. tras un 401)."""
+    if site_key:
+        _HEADER_CACHE.pop(site_key, None)
+    else:
+        _HEADER_CACHE.clear()
 
 
 def set_rankmath_meta(wp_url: str, headers: dict, post_id: int, blog_data: dict) -> bool:
@@ -131,87 +172,241 @@ def set_faq_schema_meta(site_key: str, post_id: int, content: str) -> dict:
         return {"error": str(e)}
 
 
-def publish_post(site_key: str, blog_data: dict, featured_media_id: int = None) -> dict | None:
-    """
-    Publica el post en WordPress con metadatos de Rank Math.
-    Retorna el post creado o None si falla.
+def create_draft(site_key: str, blog_data: dict, featured_media_id: int = None) -> dict:
+    """Crea el post como BORRADOR. Nunca publica.
+
+    Publicar es un paso aparte (`promote_to_publish`) que solo ocurre si las diez
+    compuertas pasan. El motivo es que la compuerta 1 necesita que el post exista
+    en WordPress para poder abrirlo en el editor y leer la puntuación real de Rank
+    Math, y la compuerta 4 necesita ver el slug que WordPress asignó de verdad.
+
+    Devuelve {'post': dict|None, 'error': str, 'category_error': str}.
     """
     wp_url, headers = get_wp_headers(site_key)
-
-    # Agregar atribución de Unsplash al final del contenido si hay imagen
-    content = blog_data.get("content", "")
+    site = SITES[site_key]
 
     payload = {
         "title": blog_data["title"],
         "slug": blog_data.get("slug", ""),
-        "content": content,
+        "content": blog_data.get("content", ""),
         "excerpt": blog_data.get("excerpt", ""),
-        "status": "publish",
+        "status": "draft",
         "meta": {
             "rank_math_title": blog_data.get("rank_math_title", blog_data["title"]),
             "rank_math_description": blog_data.get("rank_math_description", ""),
             "rank_math_focus_keyword": blog_data.get("rank_math_focus_keyword", ""),
-        }
+        },
     }
-
-    # Agregar imagen destacada si existe
     if featured_media_id:
         payload["featured_media"] = featured_media_id
 
-    # Asignar categoría detectada por Claude o fallback del config
-    from config import SITES
-    category_name = blog_data.get("category") or SITES[site_key].get("category", "Tecnología Médica")
-    cat_id = get_or_create_category(wp_url, headers, category_name)
+    category_name = blog_data.get("category") or site.get("category", "")
+    cat_id, cat_error = resolve_category(wp_url, headers, category_name, site_key)
     if cat_id:
         payload["categories"] = [cat_id]
+    else:
+        print(f"[WP] Categoría sin resolver: {cat_error}")
 
-    # Agregar tags si existen
     tags = blog_data.get("tags", [])
     if tags:
         tag_ids = get_or_create_tags(wp_url, headers, tags)
         if tag_ids:
             payload["tags"] = tag_ids
 
+    # El try cubre SOLO la creación. Todo lo que venga después va en su propio try.
+    #
+    # Por qué importa tanto: en `publish_post` (la versión anterior) un único try
+    # envolvía la creación Y los pasos posteriores de metadata, y devolvía None ante
+    # cualquier fallo — incluidos los que ocurren cuando el post YA existe en
+    # WordPress. El llamador interpretaba None como "no se creó nada", registraba
+    # `success=False` y al día siguiente volvía a escoger el mismo tema. Historial
+    # real del agente en propertyledger:
+    #
+    #     ERR 2026-07-30  Security deposit accounting for property managers...
+    #     ok  2026-07-31  Security deposit accounting for property managers...
+    #
+    # El post #210 existe con fecha 30-jul y el #212 del 31-jul es el que WordPress
+    # bautizó con sufijo `-2`. Igual con el chart of accounts: ERR 4-ago (post #219
+    # creado) y ok 5-ago (post #221). Esa es la fuente real de los duplicados del
+    # agente, no un log que se perdiera.
     try:
-        response = requests.post(
-            f"{wp_url}/wp-json/wp/v2/posts",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        response.raise_for_status()
-        post = response.json()
-        print(f"[WP] Post publicado: {post['link']}")
-
-        # PATCH separado para rank_math — Rank Math no acepta meta en el POST inicial
-        rank_meta = {
-            "meta": {
-                "rank_math_title": blog_data.get("rank_math_title", blog_data["title"]),
-                "rank_math_description": blog_data.get("rank_math_description", ""),
-                "rank_math_focus_keyword": blog_data.get("rank_math_focus_keyword", ""),
-            }
-        }
-        patch = requests.patch(
-            f"{wp_url}/wp-json/wp/v2/posts/{post['id']}",
-            headers=headers,
-            json=rank_meta,
-            timeout=15
-        )
-        if patch.status_code == 200:
-            print(f"[WP] Rank Math meta guardado en post {post['id']}")
-        else:
-            print(f"[WP] Advertencia: rank_math meta no guardado ({patch.status_code})")
-
-        # Persistencia fiable de rank_math vía endpoint propio de Rank Math
-        set_rankmath_meta(wp_url, headers, post["id"], blog_data)
-
-        return post
-
+        r = requests.post(f"{wp_url}/wp-json/wp/v2/posts", headers=headers,
+                          json=payload, timeout=40)
+        r.raise_for_status()
+        post = r.json()
     except Exception as e:
-        print(f"[WP] Error publicando post: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"[WP] Respuesta: {e.response.text[:500]}")
+        detalle = ""
+        if hasattr(e, "response") and e.response is not None:
+            detalle = e.response.text[:500]
+        print(f"[WP] Error creando borrador: {e} {detalle}")
+        return {"post": None, "error": f"{e} {detalle}".strip(), "category_error": cat_error}
+
+    print(f"[WP] Borrador creado #{post.get('id')} slug='{post.get('slug')}'")
+    meta_error = ""
+    try:
+        set_rankmath_meta(wp_url, headers, post["id"], blog_data)
+    except Exception as e:
+        # El borrador ya existe: se reporta el fallo pero NUNCA se devuelve None,
+        # o el agente creería que no publicó nada y lo reintentaría mañana.
+        meta_error = f"el borrador #{post.get('id')} se creó pero falló set_rankmath_meta: {e}"
+        print(f"[WP] {meta_error}")
+
+    return {"post": post, "error": "", "category_error": cat_error, "meta_error": meta_error}
+
+
+def promote_to_publish(site_key: str, post_id: int) -> dict | None:
+    """Pasa un borrador ya validado a publicado."""
+    wp_url, headers = get_wp_headers(site_key)
+    try:
+        r = requests.post(f"{wp_url}/wp-json/wp/v2/posts/{post_id}", headers=headers,
+                          json={"status": "publish"}, timeout=40)
+        r.raise_for_status()
+        post = r.json()
+        print(f"[WP] Publicado #{post_id}: {post.get('link')}")
+        return post
+    except Exception as e:
+        print(f"[WP] Error publicando #{post_id}: {e}")
         return None
+
+
+def update_draft(site_key: str, post_id: int, blog_data: dict) -> dict | None:
+    """Actualiza el contenido de un borrador (usado al iterar por puntuación)."""
+    wp_url, headers = get_wp_headers(site_key)
+    payload = {"content": blog_data.get("content", "")}
+    for campo, clave in (("title", "title"), ("excerpt", "excerpt")):
+        if blog_data.get(clave):
+            payload[campo] = blog_data[clave]
+    payload["meta"] = {
+        "rank_math_title": blog_data.get("rank_math_title", ""),
+        "rank_math_description": blog_data.get("rank_math_description", ""),
+        "rank_math_focus_keyword": blog_data.get("rank_math_focus_keyword", ""),
+    }
+    try:
+        r = requests.post(f"{wp_url}/wp-json/wp/v2/posts/{post_id}", headers=headers,
+                          json=payload, timeout=40)
+        r.raise_for_status()
+        set_rankmath_meta(wp_url, headers, post_id, blog_data)
+        return r.json()
+    except Exception as e:
+        print(f"[WP] Error actualizando borrador #{post_id}: {e}")
+        return None
+
+
+def get_media_info(site_key: str, media_id: int) -> dict:
+    """Datos de la imagen para la compuerta 2: alt, URLs de thumbnail y medium."""
+    wp_url, headers = get_wp_headers(site_key)
+    try:
+        r = requests.get(f"{wp_url}/wp-json/wp/v2/media/{media_id}", headers=headers,
+                         params={"context": "edit"}, timeout=25)
+        r.raise_for_status()
+        m = r.json()
+        sizes = (m.get("media_details") or {}).get("sizes", {})
+        return {
+            "media_id": media_id,
+            "alt_text": m.get("alt_text", ""),
+            "source_url": m.get("source_url", ""),
+            "width": (m.get("media_details") or {}).get("width"),
+            "height": (m.get("media_details") or {}).get("height"),
+            "filename": (m.get("media_details") or {}).get("file", "").split("/")[-1],
+            "sizes": {k: v.get("source_url") for k, v in sizes.items()},
+        }
+    except Exception as e:
+        print(f"[WP] Error leyendo media {media_id}: {e}")
+        return {"media_id": media_id, "alt_text": "", "sizes": {}}
+
+
+def set_media_alt(site_key: str, media_id: int, alt_text: str) -> bool:
+    wp_url, headers = get_wp_headers(site_key)
+    try:
+        r = requests.post(f"{wp_url}/wp-json/wp/v2/media/{media_id}", headers=headers,
+                          json={"alt_text": alt_text}, timeout=20)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def trash_post(site_key: str, post_id: int) -> bool:
+    """Manda el borrador a la papelera. Se usa solo cuando la compuerta 4 detecta
+    que WordPress asignó un slug con sufijo -N (el contenido ya existía)."""
+    wp_url, headers = get_wp_headers(site_key)
+    try:
+        r = requests.delete(f"{wp_url}/wp-json/wp/v2/posts/{post_id}", headers=headers,
+                            timeout=25)
+        return r.status_code == 200
+    except Exception as e:
+        print(f"[WP] Error mandando #{post_id} a la papelera: {e}")
+        return False
+
+
+def fetch_posts_for_index(site_key: str) -> list[dict]:
+    """Baja todos los posts (publicados, borradores y programados) con lo que el
+    índice anti-duplicados necesita: título, H1 del cuerpo, focus keyword y H2.
+
+    Se incluyen borradores y programados a propósito: un borrador ya ocupa el tema
+    y su slug. Auditar solo con status=publish deja escapar lo programado.
+    """
+    from tools.html_tools import analyze, normalize_text
+    from tools.topic_index import normalize_title
+
+    wp_url, headers = get_wp_headers(site_key)
+    out, page = [], 1
+    while True:
+        r = requests.get(f"{wp_url}/wp-json/wp/v2/posts", headers=headers,
+                         params={"context": "edit", "per_page": 100, "page": page,
+                                 "status": "publish,draft,future,pending,private",
+                                 "orderby": "date", "order": "asc"},
+                         timeout=45)
+        if r.status_code != 200:
+            print(f"[WP] fetch_posts_for_index página {page}: HTTP {r.status_code}")
+            break
+        batch = r.json()
+        if not batch:
+            break
+        for p in batch:
+            content = (p.get("content") or {}).get("raw", "") or ""
+            title = (p.get("title") or {}).get("raw") or (p.get("title") or {}).get("rendered", "")
+            a = analyze(content)
+            h1 = next((t for lvl, t in a["headings"] if lvl == 1), "")
+            meta = p.get("meta") or {}
+            out.append({
+                "id": p["id"],
+                "slug": p.get("slug"),
+                "title": normalize_text(title),
+                "norm_title": normalize_title(title),
+                "h1": h1,
+                "focus_keyword": meta.get("rank_math_focus_keyword", ""),
+                "seo_score": meta.get("rank_math_seo_score", ""),
+                "h2": a["h2_texts"],
+                "norm_h2": sorted({normalize_title(h) for h in a["h2_texts"] if normalize_title(h)}),
+                "status": p.get("status"),
+                "link": p.get("link"),
+                "date_gmt": p.get("date_gmt"),
+            })
+        if len(batch) < 100:
+            break
+        page += 1
+    return out
+
+
+def published_dates(site_key: str) -> list[str]:
+    """Fechas date_gmt de los posts PUBLICADOS. Fuente de verdad para el ritmo de
+    publicación: se lee de WordPress, no de un log local que se pierde al redeplegar."""
+    wp_url, headers = get_wp_headers(site_key)
+    fechas, page = [], 1
+    while True:
+        r = requests.get(f"{wp_url}/wp-json/wp/v2/posts", headers=headers,
+                         params={"per_page": 100, "page": page, "status": "publish",
+                                 "orderby": "date", "order": "desc"}, timeout=40)
+        if r.status_code != 200:
+            break
+        batch = r.json()
+        if not batch:
+            break
+        fechas.extend(p.get("date_gmt") for p in batch)
+        if len(batch) < 100 or len(fechas) >= 200:
+            break
+        page += 1
+    return [f for f in fechas if f]
 
 
 def get_posts_list(site_key: str, per_page: int = 100) -> list[dict]:
@@ -346,30 +541,74 @@ def update_post(site_key: str, post_id: int, blog_data: dict, featured_media_id:
         return None
 
 
-def get_or_create_category(wp_url: str, headers: dict, category_name: str) -> int | None:
-    try:
-        search = requests.get(
-            f"{wp_url}/wp-json/wp/v2/categories",
-            headers=headers,
-            params={"search": category_name},
-            timeout=10
-        )
-        results = search.json()
-        if results:
-            return results[0]["id"]
-        create = requests.post(
-            f"{wp_url}/wp-json/wp/v2/categories",
-            headers=headers,
-            json={"name": category_name, "slug": category_name.lower().replace(" ", "-")},
-            timeout=10
-        )
-        if create.status_code == 201:
-            cat_id = create.json()["id"]
-            print(f"[WP] Categoría creada: '{category_name}' (ID {cat_id})")
-            return cat_id
-    except Exception as e:
-        print(f"[WP] Error con categoría '{category_name}': {e}")
-    return None
+def list_categories(site_key: str = None, wp_url: str = None, headers: dict = None) -> dict:
+    """Todas las categorías del sitio: {id: nombre_decodificado}.
+
+    Se decodifican las entidades HTML porque WordPress guarda el nombre YA
+    codificado: la categoría 22 se llama literalmente 'HOA &amp; Condo Accounting'
+    en la base de datos.
+    """
+    if wp_url is None or headers is None:
+        wp_url, headers = get_wp_headers(site_key)
+    out, page = {}, 1
+    while True:
+        r = requests.get(f"{wp_url}/wp-json/wp/v2/categories", headers=headers,
+                         params={"per_page": 100, "page": page, "hide_empty": "false"},
+                         timeout=20)
+        if r.status_code != 200:
+            print(f"[WP] Error listando categorías ({r.status_code})")
+            break
+        batch = r.json()
+        if not batch:
+            break
+        for c in batch:
+            out[c["id"]] = html.unescape(c["name"])
+        if len(batch) < 100:
+            break
+        page += 1
+    return out
+
+
+def resolve_category(wp_url: str, headers: dict, category_name: str,
+                     site_key: str = None) -> tuple[int | None, str]:
+    """Busca la categoría por nombre SIN crearla. Devuelve (id, motivo_si_falla).
+
+    Por qué ya no usa ?search= ni crea nada. Medición literal del 14-ago-2026
+    contra propertyledger.us:
+
+        GET /wp/v2/categories?search=HOA & Condo Accounting      -> []
+        GET /wp/v2/categories?search=HOA &amp; Condo Accounting  -> [(22, 'HOA &amp; Condo Accounting')]
+
+    El nombre vive HTML-codificado en la base. La versión anterior buscaba con el
+    '&' literal, no encontraba nada, intentaba CREAR una categoría que ya existía,
+    WordPress respondía term_exists (no 201), la función devolvía None, el payload
+    salía sin `categories` y WordPress caía al default: Uncategorized. Es lo que le
+    pasó al post #322 del 13-ago.
+
+    Además, la compuerta 6 prohíbe crear categorías nuevas sin aprobación: si el
+    tema no encaja en ninguna existente, se reporta y el post se queda en borrador.
+    """
+    cats = list_categories(wp_url=wp_url, headers=headers)
+    quiero = _norm_cat(category_name)
+
+    for cid, nombre in cats.items():
+        if _norm_cat(nombre) == quiero:
+            return cid, ""
+    # tolerancia: coincidencia por contención (p.ej. "HOA Accounting" -> "HOA & Condo Accounting")
+    candidatos = [(cid, n) for cid, n in cats.items()
+                  if _norm_cat(n) != "uncategorized" and
+                  (quiero in _norm_cat(n) or _norm_cat(n) in quiero)]
+    if len(candidatos) == 1:
+        print(f"[WP] Categoría '{category_name}' resuelta por coincidencia parcial "
+              f"-> '{candidatos[0][1]}' (id {candidatos[0][0]})")
+        return candidatos[0][0], ""
+
+    return None, (f"'{category_name}' no existe en el sitio. Categorías reales: "
+                  f"{sorted(n for n in cats.values())}. No se crea ninguna sin aprobación")
+
+
+def _norm_cat(name: str) -> str:
+    return re.sub(r"\s+", " ", html.unescape(name or "").replace("&", "and")).strip().lower()
 
 
 def get_or_create_tags(wp_url: str, headers: dict, tag_names: list[str]) -> list[int]:

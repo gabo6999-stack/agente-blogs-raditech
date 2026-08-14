@@ -12,16 +12,20 @@ def _ascii_slug(text: str, fallback: str = "unsplash") -> str:
     return slug or fallback
 
 
-def get_unsplash_image(query: str) -> dict | None:
+def get_unsplash_image(query: str, skip_ids: set = None, per_page: int = 10) -> dict | None:
     """
     Busca una imagen en Unsplash relacionada con el query.
     Retorna dict con url, photographer y attribution.
+
+    `skip_ids` permite pedir otra foto cuando la compuerta 2 rechaza la primera por
+    repetida: se salta cualquier id de Unsplash ya usado en ese sitio.
     """
+    skip_ids = skip_ids or set()
     try:
         url = "https://api.unsplash.com/search/photos"
         params = {
             "query": query,
-            "per_page": 5,
+            "per_page": per_page,
             "orientation": "landscape",
             "content_filter": "high"
         }
@@ -35,8 +39,11 @@ def get_unsplash_image(query: str) -> dict | None:
             print(f"[Images] No se encontraron imágenes para: {query}")
             return None
 
-        # Tomar la primera imagen
-        photo = data["results"][0]
+        candidatos = [p for p in data["results"] if p.get("id") not in skip_ids]
+        if not candidatos:
+            print(f"[Images] Las {len(data['results'])} fotos de '{query}' ya se usaron en este sitio")
+            return None
+        photo = candidatos[0]
 
         # Trigger download (requerido por Unsplash API guidelines)
         download_url = photo["links"]["download_location"]
@@ -47,6 +54,7 @@ def get_unsplash_image(query: str) -> dict | None:
         )
 
         return {
+            "unsplash_id": photo.get("id", ""),
             "url": photo["urls"]["regular"],
             "full_url": photo["urls"]["full"],
             "thumb_url": photo["urls"]["small"],
@@ -60,6 +68,55 @@ def get_unsplash_image(query: str) -> dict | None:
 
     except Exception as e:
         print(f"[Images] Error obteniendo imagen de Unsplash: {e}")
+        return None
+
+
+def build_alt_text(image_data: dict, focus_keyword: str, topic: str = "") -> str:
+    """Alt descriptivo que incluye la keyword objetivo de forma natural.
+
+    La compuerta 2 exige que el alt lleve la keyword. El alt que devuelve Unsplash
+    describe la foto, no el artículo, así que se antepone la keyword.
+    """
+    base = (image_data.get("alt_text") or topic or "").strip().rstrip(".")
+    kw = (focus_keyword or "").strip()
+    if not kw:
+        return base[:120]
+    if kw.lower() in base.lower():
+        return base[:120]
+    return (f"{kw} — {base}" if base else kw)[:120]
+
+
+def download_image(image_data: dict) -> bytes | None:
+    """Descarga los bytes de la foto. Se descarga ANTES de subir para poder
+    calcular el SHA-256 y consultarlo contra el registro de imágenes del sitio."""
+    try:
+        r = requests.get(image_data["url"], timeout=40)
+        r.raise_for_status()
+        return r.content
+    except Exception as e:
+        print(f"[Images] Error descargando la imagen: {e}")
+        return None
+
+
+def upload_bytes_to_wordpress(image_bytes: bytes, filename: str, alt_text: str,
+                              wp_url: str, headers: dict) -> int | None:
+    """Sube bytes ya descargados y fija el alt. Devuelve el media_id."""
+    try:
+        media_url = f"{wp_url}/wp-json/wp/v2/media"
+        media_headers = {
+            **headers,
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Type": "image/jpeg",
+        }
+        r = requests.post(media_url, headers=media_headers, data=image_bytes, timeout=60)
+        r.raise_for_status()
+        media_id = r.json()["id"]
+        requests.post(f"{media_url}/{media_id}", headers=headers,
+                      json={"alt_text": alt_text}, timeout=20)
+        print(f"[Images] Imagen subida a WordPress, ID: {media_id} (alt: {alt_text!r})")
+        return media_id
+    except Exception as e:
+        print(f"[Images] Error subiendo imagen: {e}")
         return None
 
 

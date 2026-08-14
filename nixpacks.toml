@@ -1,0 +1,52 @@
+# Build de Railway (Nixpacks).
+#
+# Existe por una sola razón: la compuerta 1 necesita un navegador de verdad. La
+# puntuación SEO de Rank Math se calcula en JavaScript dentro del editor de bloques
+# y no existe del lado del servidor, así que la única forma de leerla es abrir el
+# post en el editor con Playwright.
+#
+# Sin este archivo, `playwright` se instala como paquete de Python pero NO hay
+# navegador ni librerías del sistema, y la compuerta 1 falla siempre — con lo que el
+# agente no publicaría nada.
+
+[phases.setup]
+# Dependencias del sistema que Chromium necesita en Debian. Se declaran aquí en vez
+# de usar `playwright install --with-deps` porque ese comando necesita apt como root
+# a mitad del build y es más frágil.
+aptPkgs = [
+  "libnss3",
+  "libnspr4",
+  "libatk1.0-0",
+  "libatk-bridge2.0-0",
+  "libcups2",
+  "libdrm2",
+  "libxkbcommon0",
+  "libxcomposite1",
+  "libxdamage1",
+  "libxfixes3",
+  "libxrandr2",
+  "libgbm1",
+  "libpango-1.0-0",
+  "libcairo2",
+  "libasound2",
+  "libatspi2.0-0",
+  "fonts-liberation",
+]
+
+[phases.playwright]
+# Fase propia después de instalar las dependencias de Python, para no tener que
+# replicar el comando de instalación por defecto de Nixpacks.
+#
+# Se intenta primero con --with-deps, que resuelve los nombres de paquete correctos
+# para la distro del build (en Ubuntu 24.04 varios se llaman distinto: libasound2
+# pasa a ser libasound2t64). Si eso falla —porque no hay apt o no somos root— se
+# instala solo el navegador y las librerías las aporta aptPkgs de arriba.
+dependsOn = ["install"]
+cmds = [
+  "python -m playwright install --with-deps chromium || python -m playwright install chromium",
+]
+
+[variables]
+# El navegador se descarga en el build y tiene que seguir ahí en ejecución. Con una
+# ruta explícita dentro de /app no depende de qué usuario corra el contenedor.
+PLAYWRIGHT_BROWSERS_PATH = "/app/.playwright-browsers"
