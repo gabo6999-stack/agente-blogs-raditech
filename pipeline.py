@@ -23,7 +23,7 @@ from config import SITES
 from tools.trends import pick_topic
 from tools.writer import generate_blog, edit_blog
 from tools.images import get_unsplash_image, upload_image_to_wordpress
-from tools.wordpress import publish_post, get_wp_headers, get_post, get_tag_names, update_post, set_featured_image, get_posts_list
+from tools.wordpress import get_wp_headers, get_post, get_tag_names, update_post, set_featured_image, get_posts_list
 from tools.logger import log_post, get_used_topics, get_history, get_last_post
 
 app = FastAPI()
@@ -57,7 +57,8 @@ DAY_MAP_ES = {
 agent_status = {
     "running": False,
     "last_post": None,
-    "last_error": None
+    "last_error": None,
+    "last_report": None,
 }
 
 
@@ -105,9 +106,13 @@ def save_schedule_config(config: dict):
         json.dump(config, f, ensure_ascii=False, indent=2)
 
 
-def run_pipeline(site_key: str, topic: str = None):
-    """
-    Pipeline completo: tendencias → escritura → imágenes → publicación
+def run_pipeline(site_key: str, topic: str = None, dry_run: bool = False):
+    """Pipeline con compuertas de bloqueo (ver publisher.run_guarded_pipeline).
+
+    Antes esto generaba el artículo y lo mandaba a WordPress con status='publish'
+    de una vez, sin validar nada. Ahora se crea como BORRADOR, se pasan las diez
+    compuertas y solo se publica si todas pasan. Si alguna falla, el post se queda
+    en borrador y el reporte dice por qué.
     """
     agent_status["running"] = True
     print(f"\n{'='*50}")
@@ -116,63 +121,38 @@ def run_pipeline(site_key: str, topic: str = None):
     print(f"{'='*50}\n")
 
     try:
-        # 1. Seleccionar tema
-        if not topic:
-            used_topics = get_used_topics(site_key)
-            topic = pick_topic(site_key, used_topics)
-        print(f"[Pipeline] Tema seleccionado: {topic}")
+        from publisher import run_guarded_pipeline
+        rep = run_guarded_pipeline(site_key, topic, dry_run=dry_run)
+        agent_status["last_report"] = rep
 
-        # 2. Generar blog
-        blog_data = generate_blog(site_key, topic)
-
-        # 3. Obtener imagen
-        unsplash_query = blog_data.get("unsplash_query", topic)
-        image_data = get_unsplash_image(unsplash_query)
-
-        # 4. Subir imagen
-        featured_media_id = None
-        if image_data:
-            wp_url, headers = get_wp_headers(site_key)
-            featured_media_id = upload_image_to_wordpress(image_data, wp_url, headers)
-
-        # 5. Publicar post
-        post = publish_post(site_key, blog_data, featured_media_id)
-
-        # 6. Registrar
-        if post:
-            log_post(site_key, topic, post, success=True)
+        if rep.get("publicado"):
+            post = rep["post"]
             agent_status["last_post"] = {
-                "title": post.get("title", {}).get("rendered", ""),
-                "url": post.get("link", ""),
-                "date": datetime.now().strftime("%Y-%m-%d %H:%M")
+                "title": post.get("titulo", ""),
+                "url": post.get("url", ""),
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
             }
             agent_status["last_error"] = None
-            print(f"\n[Pipeline] ✅ Blog publicado: {post.get('link')}")
+            print(f"\n[Pipeline] ✅ Blog publicado: {post.get('url')}")
 
-            notify_nexus(
-                action=f"Publicó un blog ({site_key})",
-                detail=post.get("title", {}).get("rendered", "") or topic,
-                url=post.get("link", ""),
-            )
+            notify_nexus(action=f"Publicó un blog ({site_key})",
+                         detail=post.get("titulo", "") or rep.get("tema", ""),
+                         url=post.get("url", ""))
 
-            # 7. Optimizar con agente SEO (solo raditech tiene endpoint SEO propio de su nicho)
+            # Solo raditech tiene endpoint SEO propio de su nicho
             if site_key == "raditech":
-                notify_seo_agent(
-                    post_id=post.get("id"),
-                    title=post.get("title", {}).get("rendered", ""),
-                    content=blog_data.get("content", ""),
-                    url=post.get("link", "")
-                )
-
-            # 8. FAQ schema vía Rank Math meta para sitios cuya cuenta publicadora
-            #    es 'author' (WordPress borra el <script> del content). Ver
-            #    tools.wordpress.set_faq_schema_meta / config flag.
-            if SITES[site_key].get("faq_schema_via_meta"):
-                from tools.wordpress import set_faq_schema_meta
-                set_faq_schema_meta(site_key, post.get("id"), blog_data.get("content", ""))
+                notify_seo_agent(post_id=post.get("id"),
+                                 title=post.get("titulo", ""),
+                                 content="", url=post.get("url", ""))
         else:
-            agent_status["last_error"] = "Post creation failed"
-            log_post(site_key, topic, None, success=False, error="Post creation failed")
+            bloqueos = [g for g in (rep.get("compuertas") or {}).get("gates", [])
+                        if g["status"] == "FALLA"]
+            motivo = "; ".join(f"{g['gate']}: {g['reason'][:120]}" for g in bloqueos) or "sin detalle"
+            agent_status["last_error"] = f"No se publicó — {motivo}"
+            print(f"\n[Pipeline] ⛔ NO se publicó. {motivo}")
+            notify_nexus(action=f"Bloqueó una publicación ({site_key})", detail=motivo)
+            log_post(site_key, rep.get("tema") or topic or "unknown", None,
+                     success=False, error=motivo[:400])
 
     except Exception as e:
         print(f"[Pipeline] ❌ Error: {e}")
@@ -596,6 +576,7 @@ def dashboard():
 class PublishRequest(BaseModel):
     site_key: str
     topic: Optional[str] = None
+    dry_run: bool = False
 
 
 @app.post("/publish")
@@ -605,11 +586,78 @@ def publish_now(req: PublishRequest):
     if req.site_key not in SITES:
         raise HTTPException(status_code=404, detail=f"Sitio '{req.site_key}' no encontrado")
 
-    thread = threading.Thread(target=run_pipeline, args=(req.site_key, req.topic))
+    thread = threading.Thread(target=run_pipeline, args=(req.site_key, req.topic, req.dry_run))
     thread.daemon = True
     thread.start()
 
-    return {"status": "started", "site": req.site_key, "topic": req.topic or "automático"}
+    return {"status": "started", "site": req.site_key, "topic": req.topic or "automático",
+            "dry_run": req.dry_run}
+
+
+# ─── COMPUERTAS: estado, parada de emergencia y reportes ─────────────────────
+
+@app.get("/gates/{site_key}")
+def gates_status(site_key: str):
+    """Estado de las compuertas que se pueden evaluar sin escribir nada."""
+    if site_key not in SITES:
+        raise HTTPException(status_code=404, detail=f"Sitio '{site_key}' no encontrado")
+    from gates.cadence import audit_history, g10_publish_rate, is_halted
+    from tools import site_health, store, topic_index
+    from tools.wordpress import published_dates
+
+    fechas = published_dates(site_key)
+    ritmo = g10_publish_rate(site_key, fechas)
+    idx = topic_index.load(site_key)
+    return {
+        "site": site_key,
+        "estado_persistencia": {
+            "DATA_DIR": store.DATA_DIR,
+            "persistente": store.is_persistent(),
+            "aviso": None if store.is_persistent() else
+                     "DATA_DIR no configurado: el índice y el registro de imágenes se "
+                     "pierden en cada redeploy. Montar volumen y exportar DATA_DIR=/data",
+        },
+        "parada_emergencia": is_halted(site_key),
+        "salud_sitio": site_health.check(site_key),
+        "ritmo": [{"gate": r.gate, "estado": r.status, "motivo": r.reason} for r in ritmo],
+        "historial_ritmo": audit_history(fechas),
+        "indice_temas": {"posts": len(idx.get("posts", [])),
+                         "refrescado": idx.get("refreshed_at")},
+    }
+
+
+@app.post("/halt/{site_key}/clear")
+def clear_emergency_halt(site_key: str):
+    if site_key not in SITES:
+        raise HTTPException(status_code=404, detail=f"Sitio '{site_key}' no encontrado")
+    from gates.cadence import clear_halt
+    return {"status": "cleared", "site": site_key, "detalle": clear_halt(site_key)}
+
+
+@app.post("/index/{site_key}/refresh")
+def refresh_topic_index(site_key: str):
+    if site_key not in SITES:
+        raise HTTPException(status_code=404, detail=f"Sitio '{site_key}' no encontrado")
+    from tools import topic_index
+    idx = topic_index.refresh(site_key)
+    return {"status": "ok", "site": site_key, "posts": len(idx["posts"]),
+            "refrescado": idx["refreshed_at"]}
+
+
+@app.get("/report/last")
+def last_report():
+    if not agent_status.get("last_report"):
+        raise HTTPException(status_code=404, detail="Todavía no hay ningún reporte en memoria")
+    return agent_status["last_report"]
+
+
+@app.get("/reports")
+def list_reports(limit: int = 20):
+    from tools.report import REPORT_DIR
+    if not os.path.isdir(REPORT_DIR):
+        return {"reports": []}
+    files = sorted((f for f in os.listdir(REPORT_DIR) if f.endswith(".json")), reverse=True)
+    return {"dir": REPORT_DIR, "reports": files[:limit]}
 
 
 class EditRequest(BaseModel):

@@ -1,3 +1,5 @@
+import html
+import re
 import uuid
 import requests
 from requests.auth import HTTPBasicAuth
@@ -131,41 +133,41 @@ def set_faq_schema_meta(site_key: str, post_id: int, content: str) -> dict:
         return {"error": str(e)}
 
 
-def publish_post(site_key: str, blog_data: dict, featured_media_id: int = None) -> dict | None:
-    """
-    Publica el post en WordPress con metadatos de Rank Math.
-    Retorna el post creado o None si falla.
+def create_draft(site_key: str, blog_data: dict, featured_media_id: int = None) -> dict:
+    """Crea el post como BORRADOR. Nunca publica.
+
+    Publicar es un paso aparte (`promote_to_publish`) que solo ocurre si las diez
+    compuertas pasan. El motivo es que la compuerta 1 necesita que el post exista
+    en WordPress para poder abrirlo en el editor y leer la puntuación real de Rank
+    Math, y la compuerta 4 necesita ver el slug que WordPress asignó de verdad.
+
+    Devuelve {'post': dict|None, 'error': str, 'category_error': str}.
     """
     wp_url, headers = get_wp_headers(site_key)
-
-    # Agregar atribución de Unsplash al final del contenido si hay imagen
-    content = blog_data.get("content", "")
+    site = SITES[site_key]
 
     payload = {
         "title": blog_data["title"],
         "slug": blog_data.get("slug", ""),
-        "content": content,
+        "content": blog_data.get("content", ""),
         "excerpt": blog_data.get("excerpt", ""),
-        "status": "publish",
+        "status": "draft",
         "meta": {
             "rank_math_title": blog_data.get("rank_math_title", blog_data["title"]),
             "rank_math_description": blog_data.get("rank_math_description", ""),
             "rank_math_focus_keyword": blog_data.get("rank_math_focus_keyword", ""),
-        }
+        },
     }
-
-    # Agregar imagen destacada si existe
     if featured_media_id:
         payload["featured_media"] = featured_media_id
 
-    # Asignar categoría detectada por Claude o fallback del config
-    from config import SITES
-    category_name = blog_data.get("category") or SITES[site_key].get("category", "Tecnología Médica")
-    cat_id = get_or_create_category(wp_url, headers, category_name)
+    category_name = blog_data.get("category") or site.get("category", "")
+    cat_id, cat_error = resolve_category(wp_url, headers, category_name, site_key)
     if cat_id:
         payload["categories"] = [cat_id]
+    else:
+        print(f"[WP] Categoría sin resolver: {cat_error}")
 
-    # Agregar tags si existen
     tags = blog_data.get("tags", [])
     if tags:
         tag_ids = get_or_create_tags(wp_url, headers, tags)
@@ -173,45 +175,175 @@ def publish_post(site_key: str, blog_data: dict, featured_media_id: int = None) 
             payload["tags"] = tag_ids
 
     try:
-        response = requests.post(
-            f"{wp_url}/wp-json/wp/v2/posts",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        response.raise_for_status()
-        post = response.json()
-        print(f"[WP] Post publicado: {post['link']}")
+        r = requests.post(f"{wp_url}/wp-json/wp/v2/posts", headers=headers,
+                          json=payload, timeout=40)
+        r.raise_for_status()
+        post = r.json()
+        print(f"[WP] Borrador creado #{post['id']} slug='{post.get('slug')}'")
 
-        # PATCH separado para rank_math — Rank Math no acepta meta en el POST inicial
-        rank_meta = {
-            "meta": {
-                "rank_math_title": blog_data.get("rank_math_title", blog_data["title"]),
-                "rank_math_description": blog_data.get("rank_math_description", ""),
-                "rank_math_focus_keyword": blog_data.get("rank_math_focus_keyword", ""),
-            }
-        }
-        patch = requests.patch(
-            f"{wp_url}/wp-json/wp/v2/posts/{post['id']}",
-            headers=headers,
-            json=rank_meta,
-            timeout=15
-        )
-        if patch.status_code == 200:
-            print(f"[WP] Rank Math meta guardado en post {post['id']}")
-        else:
-            print(f"[WP] Advertencia: rank_math meta no guardado ({patch.status_code})")
-
-        # Persistencia fiable de rank_math vía endpoint propio de Rank Math
         set_rankmath_meta(wp_url, headers, post["id"], blog_data)
-
-        return post
-
+        return {"post": post, "error": "", "category_error": cat_error}
     except Exception as e:
-        print(f"[WP] Error publicando post: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"[WP] Respuesta: {e.response.text[:500]}")
+        detalle = ""
+        if hasattr(e, "response") and e.response is not None:
+            detalle = e.response.text[:500]
+        print(f"[WP] Error creando borrador: {e} {detalle}")
+        return {"post": None, "error": f"{e} {detalle}".strip(), "category_error": cat_error}
+
+
+def promote_to_publish(site_key: str, post_id: int) -> dict | None:
+    """Pasa un borrador ya validado a publicado."""
+    wp_url, headers = get_wp_headers(site_key)
+    try:
+        r = requests.post(f"{wp_url}/wp-json/wp/v2/posts/{post_id}", headers=headers,
+                          json={"status": "publish"}, timeout=40)
+        r.raise_for_status()
+        post = r.json()
+        print(f"[WP] Publicado #{post_id}: {post.get('link')}")
+        return post
+    except Exception as e:
+        print(f"[WP] Error publicando #{post_id}: {e}")
         return None
+
+
+def update_draft(site_key: str, post_id: int, blog_data: dict) -> dict | None:
+    """Actualiza el contenido de un borrador (usado al iterar por puntuación)."""
+    wp_url, headers = get_wp_headers(site_key)
+    payload = {"content": blog_data.get("content", "")}
+    for campo, clave in (("title", "title"), ("excerpt", "excerpt")):
+        if blog_data.get(clave):
+            payload[campo] = blog_data[clave]
+    payload["meta"] = {
+        "rank_math_title": blog_data.get("rank_math_title", ""),
+        "rank_math_description": blog_data.get("rank_math_description", ""),
+        "rank_math_focus_keyword": blog_data.get("rank_math_focus_keyword", ""),
+    }
+    try:
+        r = requests.post(f"{wp_url}/wp-json/wp/v2/posts/{post_id}", headers=headers,
+                          json=payload, timeout=40)
+        r.raise_for_status()
+        set_rankmath_meta(wp_url, headers, post_id, blog_data)
+        return r.json()
+    except Exception as e:
+        print(f"[WP] Error actualizando borrador #{post_id}: {e}")
+        return None
+
+
+def get_media_info(site_key: str, media_id: int) -> dict:
+    """Datos de la imagen para la compuerta 2: alt, URLs de thumbnail y medium."""
+    wp_url, headers = get_wp_headers(site_key)
+    try:
+        r = requests.get(f"{wp_url}/wp-json/wp/v2/media/{media_id}", headers=headers,
+                         params={"context": "edit"}, timeout=25)
+        r.raise_for_status()
+        m = r.json()
+        sizes = (m.get("media_details") or {}).get("sizes", {})
+        return {
+            "media_id": media_id,
+            "alt_text": m.get("alt_text", ""),
+            "source_url": m.get("source_url", ""),
+            "width": (m.get("media_details") or {}).get("width"),
+            "height": (m.get("media_details") or {}).get("height"),
+            "filename": (m.get("media_details") or {}).get("file", "").split("/")[-1],
+            "sizes": {k: v.get("source_url") for k, v in sizes.items()},
+        }
+    except Exception as e:
+        print(f"[WP] Error leyendo media {media_id}: {e}")
+        return {"media_id": media_id, "alt_text": "", "sizes": {}}
+
+
+def set_media_alt(site_key: str, media_id: int, alt_text: str) -> bool:
+    wp_url, headers = get_wp_headers(site_key)
+    try:
+        r = requests.post(f"{wp_url}/wp-json/wp/v2/media/{media_id}", headers=headers,
+                          json={"alt_text": alt_text}, timeout=20)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def trash_post(site_key: str, post_id: int) -> bool:
+    """Manda el borrador a la papelera. Se usa solo cuando la compuerta 4 detecta
+    que WordPress asignó un slug con sufijo -N (el contenido ya existía)."""
+    wp_url, headers = get_wp_headers(site_key)
+    try:
+        r = requests.delete(f"{wp_url}/wp-json/wp/v2/posts/{post_id}", headers=headers,
+                            timeout=25)
+        return r.status_code == 200
+    except Exception as e:
+        print(f"[WP] Error mandando #{post_id} a la papelera: {e}")
+        return False
+
+
+def fetch_posts_for_index(site_key: str) -> list[dict]:
+    """Baja todos los posts (publicados, borradores y programados) con lo que el
+    índice anti-duplicados necesita: título, H1 del cuerpo, focus keyword y H2.
+
+    Se incluyen borradores y programados a propósito: un borrador ya ocupa el tema
+    y su slug. Auditar solo con status=publish deja escapar lo programado.
+    """
+    from tools.html_tools import analyze, normalize_text
+    from tools.topic_index import normalize_title
+
+    wp_url, headers = get_wp_headers(site_key)
+    out, page = [], 1
+    while True:
+        r = requests.get(f"{wp_url}/wp-json/wp/v2/posts", headers=headers,
+                         params={"context": "edit", "per_page": 100, "page": page,
+                                 "status": "publish,draft,future,pending,private",
+                                 "orderby": "date", "order": "asc"},
+                         timeout=45)
+        if r.status_code != 200:
+            print(f"[WP] fetch_posts_for_index página {page}: HTTP {r.status_code}")
+            break
+        batch = r.json()
+        if not batch:
+            break
+        for p in batch:
+            content = (p.get("content") or {}).get("raw", "") or ""
+            title = (p.get("title") or {}).get("raw") or (p.get("title") or {}).get("rendered", "")
+            a = analyze(content)
+            h1 = next((t for lvl, t in a["headings"] if lvl == 1), "")
+            meta = p.get("meta") or {}
+            out.append({
+                "id": p["id"],
+                "slug": p.get("slug"),
+                "title": normalize_text(title),
+                "norm_title": normalize_title(title),
+                "h1": h1,
+                "focus_keyword": meta.get("rank_math_focus_keyword", ""),
+                "seo_score": meta.get("rank_math_seo_score", ""),
+                "h2": a["h2_texts"],
+                "norm_h2": sorted({normalize_title(h) for h in a["h2_texts"] if normalize_title(h)}),
+                "status": p.get("status"),
+                "link": p.get("link"),
+                "date_gmt": p.get("date_gmt"),
+            })
+        if len(batch) < 100:
+            break
+        page += 1
+    return out
+
+
+def published_dates(site_key: str) -> list[str]:
+    """Fechas date_gmt de los posts PUBLICADOS. Fuente de verdad para el ritmo de
+    publicación: se lee de WordPress, no de un log local que se pierde al redeplegar."""
+    wp_url, headers = get_wp_headers(site_key)
+    fechas, page = [], 1
+    while True:
+        r = requests.get(f"{wp_url}/wp-json/wp/v2/posts", headers=headers,
+                         params={"per_page": 100, "page": page, "status": "publish",
+                                 "orderby": "date", "order": "desc"}, timeout=40)
+        if r.status_code != 200:
+            break
+        batch = r.json()
+        if not batch:
+            break
+        fechas.extend(p.get("date_gmt") for p in batch)
+        if len(batch) < 100 or len(fechas) >= 200:
+            break
+        page += 1
+    return [f for f in fechas if f]
 
 
 def get_posts_list(site_key: str, per_page: int = 100) -> list[dict]:
@@ -346,30 +478,74 @@ def update_post(site_key: str, post_id: int, blog_data: dict, featured_media_id:
         return None
 
 
-def get_or_create_category(wp_url: str, headers: dict, category_name: str) -> int | None:
-    try:
-        search = requests.get(
-            f"{wp_url}/wp-json/wp/v2/categories",
-            headers=headers,
-            params={"search": category_name},
-            timeout=10
-        )
-        results = search.json()
-        if results:
-            return results[0]["id"]
-        create = requests.post(
-            f"{wp_url}/wp-json/wp/v2/categories",
-            headers=headers,
-            json={"name": category_name, "slug": category_name.lower().replace(" ", "-")},
-            timeout=10
-        )
-        if create.status_code == 201:
-            cat_id = create.json()["id"]
-            print(f"[WP] Categoría creada: '{category_name}' (ID {cat_id})")
-            return cat_id
-    except Exception as e:
-        print(f"[WP] Error con categoría '{category_name}': {e}")
-    return None
+def list_categories(site_key: str = None, wp_url: str = None, headers: dict = None) -> dict:
+    """Todas las categorías del sitio: {id: nombre_decodificado}.
+
+    Se decodifican las entidades HTML porque WordPress guarda el nombre YA
+    codificado: la categoría 22 se llama literalmente 'HOA &amp; Condo Accounting'
+    en la base de datos.
+    """
+    if wp_url is None or headers is None:
+        wp_url, headers = get_wp_headers(site_key)
+    out, page = {}, 1
+    while True:
+        r = requests.get(f"{wp_url}/wp-json/wp/v2/categories", headers=headers,
+                         params={"per_page": 100, "page": page, "hide_empty": "false"},
+                         timeout=20)
+        if r.status_code != 200:
+            print(f"[WP] Error listando categorías ({r.status_code})")
+            break
+        batch = r.json()
+        if not batch:
+            break
+        for c in batch:
+            out[c["id"]] = html.unescape(c["name"])
+        if len(batch) < 100:
+            break
+        page += 1
+    return out
+
+
+def resolve_category(wp_url: str, headers: dict, category_name: str,
+                     site_key: str = None) -> tuple[int | None, str]:
+    """Busca la categoría por nombre SIN crearla. Devuelve (id, motivo_si_falla).
+
+    Por qué ya no usa ?search= ni crea nada. Medición literal del 14-ago-2026
+    contra propertyledger.us:
+
+        GET /wp/v2/categories?search=HOA & Condo Accounting      -> []
+        GET /wp/v2/categories?search=HOA &amp; Condo Accounting  -> [(22, 'HOA &amp; Condo Accounting')]
+
+    El nombre vive HTML-codificado en la base. La versión anterior buscaba con el
+    '&' literal, no encontraba nada, intentaba CREAR una categoría que ya existía,
+    WordPress respondía term_exists (no 201), la función devolvía None, el payload
+    salía sin `categories` y WordPress caía al default: Uncategorized. Es lo que le
+    pasó al post #322 del 13-ago.
+
+    Además, la compuerta 6 prohíbe crear categorías nuevas sin aprobación: si el
+    tema no encaja en ninguna existente, se reporta y el post se queda en borrador.
+    """
+    cats = list_categories(wp_url=wp_url, headers=headers)
+    quiero = _norm_cat(category_name)
+
+    for cid, nombre in cats.items():
+        if _norm_cat(nombre) == quiero:
+            return cid, ""
+    # tolerancia: coincidencia por contención (p.ej. "HOA Accounting" -> "HOA & Condo Accounting")
+    candidatos = [(cid, n) for cid, n in cats.items()
+                  if _norm_cat(n) != "uncategorized" and
+                  (quiero in _norm_cat(n) or _norm_cat(n) in quiero)]
+    if len(candidatos) == 1:
+        print(f"[WP] Categoría '{category_name}' resuelta por coincidencia parcial "
+              f"-> '{candidatos[0][1]}' (id {candidatos[0][0]})")
+        return candidatos[0][0], ""
+
+    return None, (f"'{category_name}' no existe en el sitio. Categorías reales: "
+                  f"{sorted(n for n in cats.values())}. No se crea ninguna sin aprobación")
+
+
+def _norm_cat(name: str) -> str:
+    return re.sub(r"\s+", " ", html.unescape(name or "").replace("&", "and")).strip().lower()
 
 
 def get_or_create_tags(wp_url: str, headers: dict, tag_names: list[str]) -> list[int]:

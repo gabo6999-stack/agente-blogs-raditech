@@ -164,6 +164,12 @@ SITES = {
         "wp_url": os.getenv("SITE4_WP_URL"),
         "wp_user": os.getenv("SITE4_WP_USER"),
         "wp_password": os.getenv("SITE4_WP_PASSWORD"),
+        # Compuerta 1 (puntuación real de Rank Math). La contraseña de aplicación
+        # sirve para la REST API pero NO para wp-login.php, y el editor de bloques
+        # sólo se abre con sesión de wp-admin. Sin esta variable, la compuerta 1
+        # falla y el post se queda en borrador — que es el comportamiento correcto,
+        # pero significa que el agente no publicará nada hasta configurarla.
+        "wp_login_password": os.getenv("SITE4_WP_LOGIN_PASSWORD"),
         "category": "Property Management Accounting",
         "niche": "outsourced accounting for property management companies, HOAs, condo associations and real estate investors in South Florida",
         "language": "en",
@@ -210,27 +216,41 @@ SITES = {
                 "software and tools property managers use for accounting (AppFolio, Buildium, QuickBooks)",
                 "budgeting, reserves and variance analysis for HOAs and property managers",
             ],
+            # Solo categorías que EXISTEN de verdad en el sitio. Comprobado el
+            # 14-ago-2026 vía GET /wp/v2/categories: el sitio tiene exactamente
+            # 'Trust Accounting' (26), 'Property Management Accounting' (11),
+            # 'HOA &amp; Condo Accounting' (22) y 'Uncategorized' (1).
+            # 'Financial Reporting' NO existe: estaba aquí y no en WordPress. La
+            # compuerta 6 prohíbe crear categorías nuevas sin aprobación, así que
+            # ofrecerla aquí solo consigue que el post caiga en Uncategorized.
             "categories": {
                 "Trust Accounting": "trust account reconciliation, commingling risk, state trust account compliance",
-                "Financial Reporting": "owner statements, financial statements, board reporting, audit-readiness",
-                "Property Management Accounting": "general accounting operations, month-end close, AP/AR, bookkeeping",
+                "Property Management Accounting": "general accounting operations, month-end close, AP/AR, bookkeeping, owner statements, financial statements, board reporting",
                 "HOA & Condo Accounting": "HOA and condo association specific content, reserves, budgets, treasurer guides",
             },
             "cta": (
                 "close with a soft CTA inviting the reader to schedule a free consultation at "
                 "propertyledger.us/contact or call (954) 261-1022"
             ),
+            # Verificado el 14-ago-2026 con peticiones SIN seguir redirecciones y
+            # User-Agent Googlebot (3 intentos por URL, resultado estable 3/3).
+            # Se quitaron dos entradas que estaban rotas y que el redactor venía
+            # inyectando en los artículos (el post #322 enlazaba la primera dos veces):
+            #   /hoa-condo-accounting/                                  -> 404 (Chrome y Googlebot)
+            #   /hoa-accounting-basics-guide-board-members-treasurers/  -> 404 para Googlebot;
+            #       es el post #115, que sigue en BORRADOR. Volver a ponerlo aquí solo
+            #       cuando esté publicado y devuelva 200.
+            # De todas formas la compuerta 9 revalida cada enlace en cada artículo:
+            # esta lista es la fuente del redactor, no la última palabra.
             "internal_links": {
                 # Páginas de servicio
                 "https://propertyledger.us/": "Property Ledger Solutions — home",
                 "https://propertyledger.us/monthly-accounting/": "Monthly Accounting service",
                 "https://propertyledger.us/property-management-accounting/": "Property Management Trust Accounting service",
-                "https://propertyledger.us/hoa-condo-accounting/": "HOA & Condo Association Accounting service",
                 "https://propertyledger.us/contact/": "Schedule a free consultation",
                 # Blogs pilar (para cross-linking del cluster)
                 "https://propertyledger.us/what-is-trust-accounting-property-management-guide/": "What is trust accounting in property management (guide)",
                 "https://propertyledger.us/property-management-trust-accounting/": "Property management trust accounting: reconciliation guide",
-                "https://propertyledger.us/hoa-accounting-basics-guide-board-members-treasurers/": "HOA accounting basics for boards & treasurers",
                 "https://propertyledger.us/property-management-financial-statements/": "Property management financial statements explained",
             },
         },
