@@ -644,6 +644,22 @@ def refresh_topic_index(site_key: str):
             "refrescado": idx["refreshed_at"]}
 
 
+@app.get("/health/browser")
+def health_browser():
+    """¿Puede el contenedor abrir Chromium? Verificación de un vistazo tras desplegar.
+
+    Si esto falla, la compuerta 1 falla y el agente no publicará nada — que es el
+    comportamiento correcto, pero conviene enterarse aquí y no en la primera corrida.
+    """
+    from tools.rankmath_browser import check_browser
+    info = check_browser()
+    info["compuerta_1_operativa"] = info.get("lanza", False)
+    if not info["compuerta_1_operativa"]:
+        info["consecuencia"] = ("sin navegador no se puede leer la puntuación de Rank Math, "
+                                "así que la compuerta 1 falla y todo se queda en borrador")
+    return info
+
+
 @app.get("/report/last")
 def last_report():
     if not agent_status.get("last_report"):

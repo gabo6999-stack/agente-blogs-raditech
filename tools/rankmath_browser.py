@@ -33,6 +33,46 @@ class BrowserUnavailable(RuntimeError):
     sin lectura real, la compuerta 1 falla y el post se queda en borrador."""
 
 
+def check_browser() -> dict:
+    """¿Está el navegador realmente disponible? Diagnóstico para después de desplegar.
+
+    Distingue los tres fallos posibles, que se arreglan de formas distintas:
+      - el paquete `playwright` no está instalado      -> falta en requirements.txt
+      - el binario de Chromium no está descargado      -> falta `playwright install chromium`
+      - Chromium está pero no arranca                  -> faltan librerías del sistema
+    """
+    import os as _os
+    info = {"paquete": False, "navegador": False, "lanza": False,
+            "browsers_path": _os.getenv("PLAYWRIGHT_BROWSERS_PATH"), "error": None}
+    try:
+        from playwright.sync_api import sync_playwright
+        info["paquete"] = True
+    except ImportError as e:
+        info["error"] = f"el paquete playwright no está instalado: {e}"
+        return info
+
+    try:
+        with sync_playwright() as pw:
+            info["navegador"] = bool(pw.chromium.executable_path)
+            b = pw.chromium.launch(headless=True)
+            page = b.new_page()
+            page.set_content("<h1>ok</h1>")
+            info["lanza"] = page.inner_text("h1") == "ok"
+            info["version"] = b.version
+            b.close()
+    except Exception as e:
+        msg = str(e)
+        if "Executable doesn't exist" in msg or "please run the following command" in msg:
+            info["error"] = ("Chromium no está descargado. Ejecutar: "
+                             "python -m playwright install chromium")
+        elif "error while loading shared libraries" in msg or "libnss3" in msg:
+            info["error"] = ("Chromium está pero faltan librerías del sistema "
+                             "(libnss3, libatk, libgbm...). Ver nixpacks.toml")
+        else:
+            info["error"] = msg[:300]
+    return info
+
+
 def _cerrar_estorbos(page):
     """Cierra lo que tape el panel de Rank Math.
 
