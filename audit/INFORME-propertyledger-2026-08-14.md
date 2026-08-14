@@ -262,6 +262,31 @@ Y los temas 3 y 16 (`bookkeeping vs. accounting` / `accounting vs. real estate b
 La deduplicación era por igualdad exacta de la cadena del tema, así que no los veía. La compuerta 3
 compara título normalizado, H1, focus keyword y solape de H2, y sí los detiene.
 
+### 5.5. Una sonda opcional que tumbaba la corrida entera
+
+El run del 14-ago a las 09:07 falló así (leído del `/status` del agente):
+
+```
+HTTPSConnectionPool(host='propertyledger.us', port=443): Read timed out. (read timeout=15)
+```
+
+Ese `timeout=15` es el de `get_wp_headers`, que hacía un `POST /wp-json/jwt-auth/v1/token`
+**en cada llamada a WordPress**, sin `try`. Dos problemas:
+
+1. **En propertyledger el plugin JWT no está instalado y ese endpoint devuelve 404 siempre.** Medido:
+   la sonda tarda **3,7 s**. El pipeline nuevo llama a `get_wp_headers` una docena de veces por corrida
+   — serían ~45 s de viajes de ida y vuelta desperdiciados contra un edge que ya es lento.
+2. **Cualquier fallo de esa sonda propagaba y mataba la corrida.** Y una corrida que muere a mitad es
+   exactamente lo que deja posts huérfanos (§5.4).
+
+Corregido: las cabeceras se cachean 30 min por sitio, se recuerda qué sitios no tienen JWT para no
+volver a sondearlos, y un fallo de la sonda cae a Basic Auth en vez de propagar. Tras el arreglo, las
+8 llamadas siguientes cuestan **0 ms**.
+
+Comprobado además que **el fallo de hoy no dejó ningún post huérfano**: no hay ningún post del 14-ago
+en `publish,draft,future,pending,private,trash,auto-draft`, y se subieron **0 medios** ese día. Murió
+en la primera llamada a WordPress, antes de crear nada.
+
 ### Sobre el 5xx de Search Console
 
 **No se reprodujo ningún 5xx.** Ni con UA de navegador ni con UA de Googlebot, en ninguna de las ~60 peticiones de esta auditoría. Lo que sí se midió es el 403 selectivo de arriba y dos 404 reales. No puedo confirmar ni descartar lo que reportó Search Console el 13 de agosto; sólo puedo decir que hoy, desde aquí, no ocurre. El chequeo de salud previo queda implementado y detectará el 5xx si vuelve.

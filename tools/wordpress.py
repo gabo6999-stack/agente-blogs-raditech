@@ -7,45 +7,84 @@ from config import SITES
 from tools.faq_schema import extract_visible_faq
 
 
-def get_wp_headers(site_key: str) -> tuple[str, dict]:
+# Cabeceras ya resueltas por sitio: {site_key: (wp_url, headers, caducidad)}
+_HEADER_CACHE: dict[str, tuple] = {}
+_SIN_JWT: set[str] = set()      # sitios cuyo endpoint JWT no existe
+_CACHE_TTL_S = 1800             # 30 min; los JWT de WP duran mucho más
+
+
+def _basic_headers(site: dict) -> dict:
+    import base64
+    cred = base64.b64encode(f"{site['wp_user']}:{site['wp_password']}".encode()).decode()
+    return {"Authorization": f"Basic {cred}", "Content-Type": "application/json"}
+
+
+def get_wp_headers(site_key: str, forzar: bool = False) -> tuple[str, dict]:
+    """URL base y cabeceras de autenticación para WordPress, cacheadas por sitio.
+
+    Antes esto hacía un POST a /wp-json/jwt-auth/v1/token en CADA llamada a
+    WordPress, sin try. Dos problemas serios:
+
+    1. En propertyledger.us el plugin JWT no está instalado y ese endpoint responde
+       404 siempre: un viaje de ida y vuelta desperdiciado por cada operación, contra
+       un edge que ya es lento e intermitente.
+    2. Si la petición fallaba, la excepción subía sin capturar y tumbaba la corrida
+       entera. Es lo que pasó el 14-ago-2026 a las 09:07:
+
+           HTTPSConnectionPool(host='propertyledger.us', port=443):
+           Read timed out. (read timeout=15)
+
+       Un timeout en una sonda opcional dejó al agente sin publicar ese día. Y una
+       corrida que muere a mitad es justo lo que deja posts huérfanos.
+
+    Ahora: se cachean las cabeceras 30 minutos, se recuerda qué sitios no tienen JWT
+    para no volver a sondearlos, y un fallo de la sonda cae a Basic Auth en vez de
+    propagar. Basic Auth con contraseña de aplicación funciona en los cuatro sitios.
     """
-    Retorna la URL base y headers de autenticación para WordPress.
-    """
+    import time
+
     site = SITES[site_key]
     wp_url = site["wp_url"]
-    
-    # Autenticación básica (funciona con Application Passwords de WP)
-    auth = HTTPBasicAuth(site["wp_user"], site["wp_password"])
-    
-    # Obtener JWT token
-    token_response = requests.post(
-        f"{wp_url}/wp-json/jwt-auth/v1/token",
-        json={
-            "username": site["wp_user"],
-            "password": site["wp_password"]
-        },
-        timeout=15
-    )
-    
-    if token_response.status_code == 200:
-        token = token_response.json().get("token")
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        }
-    else:
-        # Fallback a Basic Auth si JWT falla
-        print("[WP] JWT falló, usando Basic Auth")
-        import base64
-        credentials = base64.b64encode(
-            f"{site['wp_user']}:{site['wp_password']}".encode()
-        ).decode()
-        headers = {
-            "Authorization": f"Basic {credentials}",
-            "Content-Type": "application/json"
-        }
-    
+
+    if not forzar:
+        cacheado = _HEADER_CACHE.get(site_key)
+        if cacheado and cacheado[2] > time.time():
+            return cacheado[0], cacheado[1]
+
+    headers = None
+    if site_key not in _SIN_JWT:
+        try:
+            r = requests.post(f"{wp_url}/wp-json/jwt-auth/v1/token",
+                              json={"username": site["wp_user"],
+                                    "password": site["wp_password"]},
+                              timeout=15)
+            if r.status_code == 200 and r.json().get("token"):
+                headers = {"Authorization": f"Bearer {r.json()['token']}",
+                           "Content-Type": "application/json"}
+            else:
+                if r.status_code == 404:
+                    _SIN_JWT.add(site_key)
+                    print(f"[WP] {site_key}: sin plugin JWT (404); se usa Basic Auth "
+                          f"y no se vuelve a sondear")
+                else:
+                    print(f"[WP] {site_key}: JWT devolvió {r.status_code}; se usa Basic Auth")
+        except Exception as e:
+            # La sonda es opcional: nunca debe tumbar la corrida.
+            print(f"[WP] {site_key}: la sonda JWT falló ({e}); se usa Basic Auth")
+
+    if headers is None:
+        headers = _basic_headers(site)
+
+    _HEADER_CACHE[site_key] = (wp_url, headers, time.time() + _CACHE_TTL_S)
     return wp_url, headers
+
+
+def limpiar_cache_headers(site_key: str = None):
+    """Invalida las cabeceras cacheadas (p. ej. tras un 401)."""
+    if site_key:
+        _HEADER_CACHE.pop(site_key, None)
+    else:
+        _HEADER_CACHE.clear()
 
 
 def set_rankmath_meta(wp_url: str, headers: dict, post_id: int, blog_data: dict) -> bool:
