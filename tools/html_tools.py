@@ -167,6 +167,20 @@ def sanitize(html: str, post_title: str = "") -> tuple[str, list[str]]:
     if out != before:
         changes.append("escapados '&' sueltos como &amp;")
 
+    # JSON-LD suelto al final del content: el prompt le pide a Claude que NO
+    # escriba el schema FAQPage (el sistema lo genera aparte via postmeta,
+    # inmune a wp_kses_post), pero el modelo a veces lo hace igual. Si el
+    # <script> se guarda con una cuenta 'author' (sin unfiltered_html, p.ej.
+    # cmlc/pedrogavito), WordPress le quita el tag y deja el JSON crudo como
+    # texto VISIBLE roto en la pagina — bug real, visto en produccion el
+    # 2026-07-14 en 6 de 8 posts de cmlc. Se corta todo desde la primera
+    # aparicion de un bloque tipo {"@context" hasta el final; en la practica
+    # siempre aparece pegado al final, nunca en medio del articulo.
+    m = re.search(r'\{\s*"@context"', out)
+    if m:
+        out = out[:m.start()].rstrip()
+        changes.append("cortado un bloque JSON-LD suelto al final del content (el schema real vive en postmeta)")
+
     return out.strip(), changes
 
 
