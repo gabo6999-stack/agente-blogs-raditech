@@ -50,7 +50,7 @@ def extract_visible_faq(content: str) -> list:
     return faqs
 
 
-def rebuild_faq_jsonld(content: str) -> str:
+def rebuild_faq_jsonld(content: str, include_script: bool = True) -> str:
     """Reemplaza el JSON-LD FAQPage del final por uno válido derivado de la FAQ visible.
 
     - Escapa correctamente TODAS las comillas de TODAS las entradas (json.dumps).
@@ -59,6 +59,18 @@ def rebuild_faq_jsonld(content: str) -> str:
     - Valida implícitamente: json.dumps siempre produce JSON parseable.
     - El texto del JSON-LD coincide exactamente con la FAQ visible.
     - Si no hay FAQ visible, devuelve el contenido limpio SIN schema roto.
+
+    `include_script=False` (sitios con SITES[site_key]["faq_schema_via_meta"] = True,
+    p.ej. cmlc/pedrogavito): NO agrega el <script> al content. Publicar como cuenta
+    'author' (sin unfiltered_html) hace que WordPress borre el tag <script> al
+    guardar (wp_kses_post) y deje el JSON como texto VISIBLE roto en la pagina —
+    ese borrado pasa DENTRO de WordPress al momento del guardado, despues de que
+    esta funcion y sanitize() ya corrieron, asi que nada del lado Python lo puede
+    atrapar. Bug real visto en produccion el 2026-07-14 en 6 de 8 posts de cmlc,
+    a pesar de que sanitize() ya sabe cortar JSON suelto. La unica solucion real es
+    no mandar el <script> en el content para estos sitios: el schema real lo pone
+    aparte set_faq_schema_meta() via postmeta (rankmath/v1/updateMeta), que es
+    inmune a kses porque no vive en post_content.
     """
     if not content:
         return content
@@ -66,7 +78,7 @@ def rebuild_faq_jsonld(content: str) -> str:
     faqs = extract_visible_faq(content)
     # quitar cualquier ld+json previo + TODO lo que le siga (script roto + metadata pegada)
     cleaned = _TAIL_LD_RE.sub('', content).rstrip() if has_ld else content.rstrip()
-    if not faqs:
+    if not faqs or not include_script:
         return cleaned
     schema = {
         "@context": "https://schema.org",

@@ -126,12 +126,22 @@ Responde únicamente con el JSON corregido."""
         messages=[{"role": "user", "content": user_message}]
     )
 
+    # Ver el comentario largo en generate_blog(): si la respuesta se corto por
+    # limite de tokens, el JSON "content" queda a medias y repair_json lo
+    # cierra en silencio sin que nadie se entere. Abortar antes de parsear.
+    if response.stop_reason == "max_tokens":
+        raise RuntimeError(
+            "[Writer] La respuesta de Claude se cortó por límite de tokens "
+            "(max_tokens=20000) editando el post. NO se publica contenido truncado."
+        )
+
     full_text = "".join(block.text for block in response.content if hasattr(block, "text"))
 
     try:
         blog_data = _parse_json(full_text)
         if blog_data.get("content"):
-            blog_data["content"] = rebuild_faq_jsonld(blog_data["content"])
+            blog_data["content"] = rebuild_faq_jsonld(
+                blog_data["content"], include_script=not site.get("faq_schema_via_meta"))
         print(f"[Writer] Blog editado: {blog_data.get('title', 'Sin título')}")
         return blog_data
     except Exception as e:
@@ -215,10 +225,17 @@ Responde solo con el JSON corregido."""
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
         )
+        # Ver el comentario largo en generate_blog(): respuesta cortada por
+        # limite de tokens = "content" a medias que repair_json cierra en
+        # silencio. Tratarlo como fallo de la iteracion (ya cae en el except
+        # de abajo, que devuelve None y el caller conserva la version buena).
+        if response.stop_reason == "max_tokens":
+            raise RuntimeError("la respuesta se cortó por límite de tokens (max_tokens=20000)")
         full_text = "".join(b.text for b in response.content if hasattr(b, "text"))
         mejor = _parse_json(full_text)
         if mejor.get("content"):
-            mejor["content"] = rebuild_faq_jsonld(mejor["content"])
+            mejor["content"] = rebuild_faq_jsonld(
+                mejor["content"], include_script=not site.get("faq_schema_via_meta"))
         return mejor
     except Exception as e:
         print(f"[Writer] No se pudo iterar el artículo: {e}")
@@ -282,12 +299,27 @@ Responde únicamente con el JSON solicitado."""
             messages=messages
         )
 
+    # La respuesta se corto (limite de tokens u otra causa): "content" va AL
+    # FINAL del JSON justamente para que esto se pueda detectar, pero nadie
+    # lo revisaba. json.loads fallaba (string sin cerrar), y el fallback
+    # repair_json "arreglaba" el JSON cerrando el string a medio texto SIN
+    # saberlo — deja el HTML cortado a mitad de una oracion, sin cerrar
+    # </li></ul>, sin FAQ, sin conclusion, y el post se publicaba igual. Asi
+    # salio el post #31 de cmlc el 2026-07-14 (rayos X a domicilio, cortado
+    # en medio de un <li>). Con esto se aborta ANTES de intentar parsear.
+    if response.stop_reason == "max_tokens":
+        raise RuntimeError(
+            f"[Writer] La respuesta de Claude se cortó por límite de tokens "
+            f"(max_tokens=20000) generando '{topic}'. NO se publica contenido truncado."
+        )
+
     full_text = "".join(block.text for block in response.content if hasattr(block, "text"))
 
     try:
         blog_data = _parse_json(full_text)
         if blog_data.get("content"):
-            blog_data["content"] = rebuild_faq_jsonld(blog_data["content"])
+            blog_data["content"] = rebuild_faq_jsonld(
+                blog_data["content"], include_script=not site.get("faq_schema_via_meta"))
         print(f"[Writer] Blog generado: {blog_data.get('title', 'Sin título')}")
         return blog_data
     except Exception as e:
