@@ -98,9 +98,18 @@ LENGTH MATTERS FOR THE SAME REASON: density is a percentage, so a 2,700-word art
 occurrences while a 1,000-word one needs ~8. Stay near the target length — a tight article is far easier
 to score than a long one, and it ranks better anyway.
 
+TITLE — power word and number (cheap, 1-3 points, but only if it does NOT break the keyword):
+After the exact keyword phrase, add — only if it fits naturally, never splitting the phrase — a power word
+and a number. Rank Math's power-word list is narrower than it sounds and is language-specific (verified live
+in Spanish: "auténtico" counts, its feminine form "auténtica" does not — do not assume an English word counts
+without checking the live score). The number can be a year for historical content, a real figure from the
+article, or a count (steps, tips). If no power word fits naturally, keep just the keyword rather than forcing
+one in.
+
 BEFORE SUBMITTING, VERIFY THE "content" MEETS ALL OF THIS (add anything missing before responding):
 - The exact focus keyword phrase in title, slug, description, first paragraph and at least one <h2>.
 - Between 8 and 13 literal occurrences of that phrase in the body (count them).
+- The title has, if it fits naturally, a power word and a number — without splitting the keyword phrase.
 - At least 3 internal <a> links to URLs from the internal pages list.
 - At least 2 external <a target="_blank" rel="noopener"> links to real, verified sources (this is often skipped — do NOT omit it!).
 - <h2>Frequently Asked Questions</h2> section with 4+ pairs of <h3>...?</h3><p>...</p>.
@@ -204,9 +213,19 @@ LA LONGITUD IMPORTA POR LO MISMO: la densidad es un porcentaje, así que un art�
 necesita ~22 apariciones literales y uno de 1.000 solo ~8. Cíñete a la longitud objetivo — un artículo
 ajustado puntúa mucho más fácil que uno largo, y además posiciona mejor.
 
+TÍTULO — power word y número (barato, 1-3 puntos, pero solo si NO rompe la keyword):
+Después de la frase exacta de la keyword, añade — si encaja con naturalidad, nunca partiendo la frase — una
+power word y un número. Verificado en vivo contra el analizador real de Rank Math (no documentación, medición
+directa): "auténtico"/"auténticos" SÍ cuenta; "auténtica"/"auténticas" (femenino) NO cuenta, y "definitiva" NO
+cuenta aunque parezca obvia — la lista de Rank Math es más angosta de lo que suena. El número puede ser un año
+si el tema es histórico ("desde 1895"), una cifra real del artículo, o una cantidad (pasos, tips). Ejemplo real
+que subió el score +2 puntos: "Historia de la radiología: el relato auténtico desde 1895". Si dudas entre una
+power word candidata, prefiere quedarte solo con la keyword antes que forzar una palabra que no encaje.
+
 ANTES DE ENTREGAR, VERIFICA QUE EL "content" CUMPLA TODO ESTO (si falta algo, agrégalo antes de responder):
 - La frase exacta de la focus keyword en title, slug, description, primer párrafo y algún <h2>.
 - Entre 8 y 13 apariciones literales de esa frase en el cuerpo (cuéntalas).
+- El título tiene, si encaja natural, una power word confirmada (auténtico/auténticos) y un número — sin partir la frase de la keyword.
 - Al menos 3 enlaces internos <a> a URLs de la lista de páginas internas.
 - Al menos 2 enlaces externos <a target="_blank" rel="noopener"> a fuentes reales verificadas (¡este suele faltar — NO lo omitas!).
 - Sección <h2>Preguntas frecuentes</h2> con 4+ pares <h3>¿…?</h3><p>…</p>.

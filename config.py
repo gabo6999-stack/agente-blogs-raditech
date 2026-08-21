@@ -96,6 +96,10 @@ SITES = {
         "wp_url": os.getenv("SITE3_WP_URL"),
         "wp_user": os.getenv("SITE3_WP_USER"),
         "wp_password": os.getenv("SITE3_WP_PASSWORD"),
+        # wp_password es un Application Password (para REST); wp-login.php no lo acepta.
+        # G01 (score real de Rank Math vía navegador) necesita la contraseña real de la
+        # cuenta, por eso existe esta clave aparte. Ver tools.rankmath_browser._parece_app_password.
+        "wp_login_password": os.getenv("SITE3_WP_LOGIN_PASSWORD"),
         "category": "Radiología e Imagen",
         "niche": "radiología e imagenología diagnóstica para pacientes (rayos X, tomografía, ultrasonido, mastografía) en Mazatlán, Sinaloa",
         "language": "es",
