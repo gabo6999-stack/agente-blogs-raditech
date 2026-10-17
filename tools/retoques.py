@@ -80,7 +80,11 @@ def completar_externos(site_key: str, blog_data: dict, site_url: str) -> bool:
     if len(actuales) >= MIN_EXTERNOS:
         return True
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    for _ in range(2):
+    for _ in range(4):
+        content = blog_data.get("content", "")
+        actuales = externos_distintos(content, site_url)
+        if len(actuales) >= MIN_EXTERNOS:
+            return True
         resp = client.messages.create(
             model=MODEL, max_tokens=1500,
             tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 3}],
@@ -101,5 +105,4 @@ def completar_externos(site_key: str, blog_data: dict, site_url: str) -> bool:
         blog_data["content"] = (content[:faq.start()] + bloque + content[faq.start():]
                                 if faq else content + "\n" + bloque)
         print(f"  [retoque] enlace externo agregado: {url}")
-        return True
-    return False
+    return len(externos_distintos(blog_data.get("content", ""), site_url)) >= MIN_EXTERNOS
