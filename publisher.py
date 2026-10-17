@@ -169,6 +169,15 @@ def run_guarded_pipeline(site_key: str, topic: str = None, *, dry_run: bool = Fa
             reason="alineada" if a["alineada"] else "; ".join(a["deficits"])[:300],
             details=a))
 
+        # Retoques acotados: descripcion 150-160 y 2 enlaces externos distintos.
+        print("\n[retoques] Descripción y enlaces externos")
+        from tools.retoques import ajustar_descripcion, completar_externos
+        try:
+            ajustar_descripcion(site_key, blog_data)
+            completar_externos(site_key, blog_data, SITES[site_key].get("wp_url") or "")
+        except Exception as e:   # las compuertas decidirán; un retoque fallido no tumba el pipeline
+            print(f"  [retoque] no se pudo: {e}")
+
         print("\n[8] Metadata de Rank Math")
         rep.extend(g08_rankmath_meta(site_key, blog_data))
 
