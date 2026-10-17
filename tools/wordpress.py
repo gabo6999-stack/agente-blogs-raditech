@@ -202,6 +202,11 @@ def create_draft(site_key: str, blog_data: dict, featured_media_id: int = None) 
 
     category_name = blog_data.get("category") or site.get("category", "")
     cat_id, cat_error = resolve_category(wp_url, headers, category_name, site_key)
+    if not cat_id and site.get("category") and site["category"] != category_name:
+        # El redactor a veces inventa una categoria ('Rayos X'); sin ella el post cae a
+        # Uncategorized y G06b lo bloquea. Se usa la categoria configurada del sitio.
+        print(f"[WP] Categoría '{category_name}' no existe; se usa la del sitio: {site['category']}")
+        cat_id, cat_error = resolve_category(wp_url, headers, site["category"], site_key)
     if cat_id:
         payload["categories"] = [cat_id]
     else:
