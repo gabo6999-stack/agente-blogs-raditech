@@ -106,3 +106,27 @@ def completar_externos(site_key: str, blog_data: dict, site_url: str) -> bool:
                                 if faq else content + "\n" + bloque)
         print(f"  [retoque] enlace externo agregado: {url}")
     return len(externos_distintos(blog_data.get("content", ""), site_url)) >= MIN_EXTERNOS
+
+
+_ANCLA = re.compile(r'(<a\s[^>]*href="[^"]+"[^>]*>)(.*?)(</a>)', re.I | re.S)
+_VARIANTES = ("conoce {a}", "más sobre {a}", "visita {a}")
+
+
+def variar_anclas(content: str) -> str:
+    """G09b: dos enlaces con el mismo texto de ancla bloquean el post (cmlc:
+    'centro médico las conchas' x3). Las repeticiones, a partir de la segunda, se
+    reescriben con un prefijo para que la ancla sea distinta SIN quitar el enlace."""
+    vistas: dict[str, int] = {}
+
+    def _cambia(m):
+        texto = m.group(2)
+        if "<" in texto:                       # ancla con HTML adentro: no se toca
+            return m.group(0)
+        clave = normalize_text(texto)
+        n = vistas.get(clave, 0)
+        vistas[clave] = n + 1
+        if n == 0 or not clave:
+            return m.group(0)
+        return m.group(1) + _VARIANTES[(n - 1) % len(_VARIANTES)].format(a=texto) + m.group(3)
+
+    return _ANCLA.sub(_cambia, content or "")
