@@ -1,3 +1,4 @@
+import re
 import json
 import anthropic
 from json_repair import repair_json
@@ -150,6 +151,31 @@ Responde únicamente con el JSON corregido."""
         raise
 
 
+_ENLACE_EXTERNO = re.compile(r'<a\s[^>]*href="(https?://[^"]+)"[^>]*>.*?</a>', re.I | re.S)
+
+
+def _conservar_enlaces_externos(original: str, mejorado: str, site_url: str) -> str:
+    """improve_blog no tiene web_search y a veces descarta los enlaces externos que
+    el redactor SI verifico; sin ellos G09d bloquea el post (cmlc, oct-2026: 0 de 0
+    en dos intentos seguidos). Lo que se perdio se vuelve a poner antes de la FAQ."""
+    host = re.sub(r"^https?://(www\.)?", "", site_url or "").split("/")[0].lower()
+    ya = {m.group(1) for m in _ENLACE_EXTERNO.finditer(mejorado)}
+    perdidos, vistos = [], set()
+    for m in _ENLACE_EXTERNO.finditer(original):
+        url = m.group(1)
+        if url in ya or url in vistos or (host and host in url.lower()):
+            continue
+        vistos.add(url)
+        perdidos.append(m.group(0))
+    if not perdidos:
+        return mejorado
+    bloque = "<p>Fuentes consultadas: " + ", ".join(perdidos) + ".</p>\n"
+    faq = re.search(r"<h2[^>]*>\s*(Preguntas frecuentes|Frequently Asked)", mejorado, re.I)
+    if faq:
+        return mejorado[:faq.start()] + bloque + mejorado[faq.start():]
+    return mejorado + "\n" + bloque
+
+
 def improve_blog(site_key: str, blog_data: dict, fallos: str, score_actual: int = None) -> dict | None:
     """Itera un artículo que se quedó corto de puntuación (compuerta 1).
 
@@ -234,6 +260,8 @@ Responde solo con el JSON corregido."""
         full_text = "".join(b.text for b in response.content if hasattr(b, "text"))
         mejor = _parse_json(full_text)
         if mejor.get("content"):
+            mejor["content"] = _conservar_enlaces_externos(
+                blog_data.get("content", ""), mejor["content"], site.get("wp_url") or "")
             mejor["content"] = rebuild_faq_jsonld(
                 mejor["content"], include_script=not site.get("faq_schema_via_meta"))
         return mejor
