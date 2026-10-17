@@ -163,13 +163,13 @@ def _conservar_enlaces_externos(original: str, mejorado: str, site_url: str) -> 
     perdidos, vistos = [], set()
     for m in _ENLACE_EXTERNO.finditer(original):
         url = m.group(1)
-        if url in ya or url in vistos or (host and host in url.lower()):
+        if url in ya or url in vistos:
             continue
         vistos.add(url)
         perdidos.append(m.group(0))
     if not perdidos:
         return mejorado
-    bloque = "<p>Fuentes consultadas: " + ", ".join(perdidos) + ".</p>\n"
+    bloque = "<p>Más información: " + ", ".join(perdidos) + ".</p>\n"
     faq = re.search(r"<h2[^>]*>\s*(Preguntas frecuentes|Frequently Asked)", mejorado, re.I)
     if faq:
         return mejorado[:faq.start()] + bloque + mejorado[faq.start():]
