@@ -23,11 +23,19 @@ Este módulo convierte la keyword en una restricción del texto, no en una etiqu
 que se pega después.
 """
 import re
+import unicodedata
 
 from tools.html_tools import normalize_text, word_count
 
 DENSIDAD_MIN = 0.5
 DENSIDAD_MAX = 2.5
+
+
+def _slug_de(kw_normalizada: str) -> str:
+    """El slug es ASCII ('mazatlan'); la keyword puede traer tilde ('mazatlán').
+    Rank Math compara contra la keyword sin acentos, así que aquí también."""
+    sin = unicodedata.normalize("NFKD", kw_normalizada).encode("ascii", "ignore").decode("ascii")
+    return sin.replace(" ", "-")
 
 
 def _cuenta(texto_normalizado: str, kw_normalizada: str) -> int:
@@ -59,7 +67,7 @@ def analizar(blog_data: dict) -> dict:
     presencia = {
         "titulo_seo": bool(nkw) and nkw in normalize_text(titulo_seo),
         "titulo_h1": bool(nkw) and nkw in normalize_text(titulo),
-        "slug": bool(nkw) and nkw.replace(" ", "-") in slug.lower(),
+        "slug": bool(nkw) and _slug_de(nkw) in slug.lower(),
         "descripcion": bool(nkw) and nkw in normalize_text(desc),
         "primer_10_por_ciento": bool(nkw) and nkw in primer_10,
         "cuerpo": apariciones > 0,
@@ -79,7 +87,7 @@ def analizar(blog_data: dict) -> dict:
                 f"el titulo SEO no contiene la frase exacta '{kw}'. Es el test de mas peso "
                 f"y arrastra a otros. Titulo actual: {titulo_seo!r}")
         if not presencia["slug"]:
-            deficits.append(f"el slug no contiene '{kw.replace(' ', '-')}'. Slug actual: {slug!r}")
+            deficits.append(f"el slug no contiene '{_slug_de(nkw)}'. Slug actual: {slug!r}")
         if not presencia["descripcion"]:
             deficits.append(f"la meta description no contiene la frase exacta '{kw}'")
         if not presencia["primer_10_por_ciento"]:
