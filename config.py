@@ -200,6 +200,8 @@ SITES = {
             "estudios de imagen Mazatlán", "ultrasonido Mazatlán", "mastografía Mazatlán",
             "rayos x a domicilio", "preparación para tomografía", "qué es una densitometría ósea",
             "radiología e imagen", "panorámica dental Mazatlán", "electrocardiograma Mazatlán",
+            "resonancia magnética Mazatlán", "densitometría ósea Mazatlán", "rayos x de columna Mazatlán",
+            "ultrasonido obstétrico Mazatlán", "BI-RADS mastografía resultados", "preparación para estudios de imagen",
         ],
         "publish_days": ["wednesday"],
         "publish_time": "10:00",
