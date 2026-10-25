@@ -19,6 +19,9 @@ def _get_profiled_prompt(niche: str, word_count: int, p: dict, language: str = "
     categories = p.get("categories", {})
     cta = p.get("cta", "")
     internal_links = p.get("internal_links", {})
+    # Ejemplos de fuentes externas del prompt en español; sin esto se usan los de marketing.
+    ext_examples = p.get("external_examples") or (
+        "Google Ads, Meta for Business, TikTok for Business, HubSpot, Statista, INEGI, etc.")
 
     angles_str = "\n".join(f"- {a}" for a in angles)
     cat_names = list(categories.keys())
@@ -165,7 +168,7 @@ INSTRUCCIONES DE CONTENIDO:
 
 ENLACES OBLIGATORIOS (SEO/AEO):
 - INTERLINKS: incluye AL MENOS 3 enlaces internos contextuales dentro del texto, usando EXCLUSIVAMENTE las URLs de la lista de abajo (no inventes URLs), solo donde sean relevantes al tema. Formato: <a href="URL_ABSOLUTA">ancla descriptiva</a>.
-- LINKS EXTERNOS (OBLIGATORIO, NO opcional): incluye AL MENOS 2 enlaces salientes a fuentes autorizadas y REALES verificadas con web_search — por ejemplo estudios, reportes de industria, o la documentación/plataformas oficiales que menciones (Google Ads, Meta for Business, TikTok for Business, HubSpot, Statista, INEGI, etc.). Formato: <a href="URL" target="_blank" rel="noopener">texto</a>. Colócalos de forma natural donde cites un dato o nombres una herramienta. Nunca inventes URLs ni cites fuentes inexistentes. Un artículo SIN 2 links externos está INCOMPLETO y no es aceptable.
+- LINKS EXTERNOS (OBLIGATORIO, NO opcional): incluye AL MENOS 2 enlaces salientes a fuentes autorizadas y REALES verificadas con web_search — por ejemplo estudios, reportes de industria, o la documentación/plataformas oficiales que menciones ({ext_examples}). Formato: <a href="URL" target="_blank" rel="noopener">texto</a>. Colócalos de forma natural donde cites un dato o nombres una herramienta. Nunca inventes URLs ni cites fuentes inexistentes. Un artículo SIN 2 links externos está INCOMPLETO y no es aceptable.
 
 PÁGINAS INTERNAS DISPONIBLES PARA INTERLINKS (usa solo estas, las relevantes):
 {links_str}

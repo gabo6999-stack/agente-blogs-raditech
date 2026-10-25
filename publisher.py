@@ -45,8 +45,16 @@ MAX_ITERACIONES_SCORE = 3
 
 
 def _service_pages(site_key: str) -> list:
-    """Páginas de servicio del sitio (no artículos de blog), para la compuerta 9c."""
-    links = (SITES[site_key].get("prompt_profile") or {}).get("internal_links", {})
+    """Páginas de servicio del sitio (no artículos de blog), para la compuerta 9c.
+
+    Si el perfil las declara en `service_pages`, mandan esas. Si no, se deducen de
+    `internal_links`: ahí la portada cuenta como servicio y G09c compara por
+    contención, así que cualquier enlace interno la satisface.
+    """
+    perfil = SITES[site_key].get("prompt_profile") or {}
+    if perfil.get("service_pages"):
+        return list(perfil["service_pages"])
+    links = perfil.get("internal_links", {})
     base = SITES[site_key]["wp_url"].rstrip("/")
     fuera = ("/blog/", "-guide", "-basics", "-explained")
     return [u for u in links

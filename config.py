@@ -8,7 +8,15 @@ SITES = {
         "wp_url": os.getenv("SITE1_WP_URL"),
         "wp_user": os.getenv("SITE1_WP_USER"),
         "wp_password": os.getenv("SITE1_WP_PASSWORD"),
-        "category": "Tecnología Médica",
+        # G01 abre el editor con wp-login.php, que no acepta una contraseña de aplicación.
+        # Si SITE1_WP_PASSWORD lo es, definir aquí la contraseña real de la cuenta.
+        "wp_login_password": os.getenv("SITE1_WP_LOGIN_PASSWORD"),
+        # Sin schema FAQPage: dentro del content lo rechaza G07e, y guardado en Rank Math
+        # (faq_schema_via_meta) desplaza al BlogPosting y al autor — medido en cmlc el
+        # 24-oct-2026. Google ya no muestra el rich result de FAQ en este tipo de sitio.
+        # La FAQ visible se queda.
+        "sin_faq_schema": True,
+        "category": "Tecnología médica",
         "niche": "software médico, sistemas PACS-RIS, teleradiología y gestión hospitalaria en México",
         "language": "es",
         "keywords_seed": [
@@ -25,11 +33,90 @@ SITES = {
         "publish_time": "09:00",
         "post_length": 1800,
         "unsplash_fallback": "hospital radiology technology medical imaging",
+        # Hasta el 24-oct-2026 raditech usaba _get_raditech_prompt, sin páginas internas
+        # ni enlaces externos: G09 lo rechazaba siempre. El perfil conserva su tono y
+        # sus ángulos y le da las páginas reales (todas verificadas en 200, sin redirección).
+        "prompt_profile": {
+            "brand": "Raditech",
+            "audience": (
+                "tomadores de decisión del sector salud en México y Latinoamérica: directores "
+                "médicos, jefes de radiología, gerentes de TI hospitalario y administradores de "
+                "clínicas y hospitales que evalúan, comparan o implementan PACS, RIS o teleradiología"
+            ),
+            "objective": (
+                "capturar tráfico orgánico B2B de decisores que están evaluando soluciones de "
+                "imagenología digital, PACS, RIS o teleradiología, y posicionar a Raditech (VIRA PACS, "
+                "PACS-RIS, teleradiología 24/7) como referencia técnica que genera confianza institucional"
+            ),
+            "tone": (
+                "técnico-profesional e institucional, orientado a ROI y eficiencia operativa, en español "
+                "de México, con los términos en inglés que son estándar del sector (PACS, DICOM, RIS, HL7, "
+                "FHIR); sin lenguaje de ventas directo: el valor surge del expertise demostrado, con datos, "
+                "estándares (DICOM, HL7, IHE) y escenarios reconocibles para hospitales y clínicas"
+            ),
+            "angles": [
+                "ROI y reducción de costos operativos (menos papel, menos tiempo, menos errores)",
+                "cumplimiento normativo en México (NOM-004, NOM-024, protección de datos en salud)",
+                "interoperabilidad: DICOM, HL7 FHIR e integración del PACS con HIS/EHR",
+                "flujo de trabajo clínico: menos tiempo de espera y reportes más rápidos",
+                "teleradiología como respuesta a la escasez de radiólogos en regiones remotas",
+                "seguridad de datos en imagenología (cifrado, acceso controlado, trazabilidad)",
+                "IA aplicada a radiología (detección asistida, priorización de estudios urgentes)",
+                "criterios para evaluar y comparar sistemas PACS en un hospital",
+            ],
+            "categories": {
+                "Diagnóstico por imagen": "PACS, DICOM, RIS, workstations, monitores médicos y modalidades de imagen (TAC, RM, rayos X)",
+                "Teleradiología": "teleradiología, interpretación remota, radiólogos y subespecialistas a distancia",
+                "Gestión hospitalaria": "digitalización hospitalaria, expediente clínico electrónico, eficiencia operativa, NOM-004",
+                "Tecnología médica": "IA en radiología, interoperabilidad HL7/FHIR, ciberseguridad en salud, tendencias del sector",
+            },
+            "cta": (
+                "cierre institucional sutil invitando a conocer la solución pertinente de Raditech "
+                "(VIRA PACS, PACS-RIS o el servicio de teleradiología) enlazando su página de producto, "
+                "o a solicitar una demostración en https://raditech.mx/contacto/ — nunca lenguaje de venta agresivo"
+            ),
+            "external_examples": (
+                "el estándar DICOM (dicomstandard.org), HL7 (hl7.org), las normas oficiales mexicanas en "
+                "el DOF, la Secretaría de Salud, la OMS, RSNA, ACR o estudios indexados en PubMed"
+            ),
+            "internal_links": {
+                "https://raditech.mx/sistema-pacs-ris/": "PACS-RIS para áreas de radiología",
+                "https://raditech.mx/pacs-teleradiologia/": "VIRA PACS con teleradiología integrada",
+                "https://raditech.mx/servicio-teleradiologia/": "Servicio de teleradiología 24/7 para hospitales",
+                "https://raditech.mx/teleradiologia-alta-especialidad/": "Teleradiología de alta especialidad con subespecialistas",
+                "https://raditech.mx/teleradiologia-resonancia-cardiovascular/": "Interpretación remota de resonancia magnética cardiovascular (CMR)",
+                "https://raditech.mx/teleradiologia-tomografia-cardiaca/": "Interpretación remota de tomografía cardiaca y angio-TAC coronaria",
+                "https://raditech.mx/monitores-medicos-radiologia/": "Monitores médicos de grado diagnóstico DICOM",
+                "https://raditech.mx/portal-x-card/": "Portal X-Card: entrega digital de estudios al paciente",
+                "https://raditech.mx/nuestros-productos/": "Todas las soluciones de Raditech",
+                "https://raditech.mx/contacto/": "Solicitar una demostración o cotización",
+                "https://raditech.mx/sistema-pacs-hospital-guia-completa-digitalizacion/": "Guía: qué es un PACS y cómo funciona en un hospital",
+                "https://raditech.mx/ris-radiologia-sistema-informacion-radiologica/": "Guía: qué es un sistema RIS",
+                "https://raditech.mx/dicom-viewer-guia-completa-hospitales-clinicas-mexico/": "Guía: qué es DICOM y para qué sirve un visor",
+                "https://raditech.mx/teleradiologia-solucion-estrategica-hospitales-clinicas-mexico/": "Guía: la teleradiología como solución para hospitales y clínicas",
+                "https://raditech.mx/inteligencia-artificial-radiologia-diagnostica-mexico-2026/": "Guía: inteligencia artificial en radiología diagnóstica",
+                "https://raditech.mx/publicamos-un-glosario-abierto-de-pacs-ris-dicom-y-hl7/": "Glosario abierto de PACS, RIS, DICOM y HL7",
+            },
+            # G09c: al menos un enlace a una de estas. Las guías no cuentan como servicio.
+            "service_pages": [
+                "https://raditech.mx/sistema-pacs-ris/",
+                "https://raditech.mx/pacs-teleradiologia/",
+                "https://raditech.mx/servicio-teleradiologia/",
+                "https://raditech.mx/teleradiologia-alta-especialidad/",
+                "https://raditech.mx/teleradiologia-resonancia-cardiovascular/",
+                "https://raditech.mx/teleradiologia-tomografia-cardiaca/",
+                "https://raditech.mx/monitores-medicos-radiologia/",
+                "https://raditech.mx/portal-x-card/",
+                "https://raditech.mx/nuestros-productos/",
+                "https://raditech.mx/contacto/",
+            ],
+        },
     },
     "tnrvisual": {
         "wp_url": os.getenv("SITE2_WP_URL"),
         "wp_user": os.getenv("SITE2_WP_USER"),
         "wp_password": os.getenv("SITE2_WP_PASSWORD"),
+        "sin_faq_schema": True,  # mismo motivo que raditech (G07e vs <script> FAQ)
         "category": "Marketing Digital",
         "niche": "marketing digital, publicidad online, SEO, redes sociales, branding y desarrollo web para PyMEs y negocios en México",
         "language": "es",
@@ -174,6 +261,7 @@ SITES = {
         # falla y el post se queda en borrador — que es el comportamiento correcto,
         # pero significa que el agente no publicará nada hasta configurarla.
         "wp_login_password": os.getenv("SITE4_WP_LOGIN_PASSWORD"),
+        "sin_faq_schema": True,  # mismo motivo que raditech: G07e lo rechazó a diario (visto del 19 al 23-oct)
         "category": "Property Management Accounting",
         "niche": "outsourced accounting for property management companies, HOAs, condo associations and real estate investors in South Florida",
         "language": "en",

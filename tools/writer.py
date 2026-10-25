@@ -7,6 +7,17 @@ from prompts.system import get_system_prompt
 from tools.faq_schema import rebuild_faq_jsonld
 
 
+def _faq_script_en_content(site: dict) -> bool:
+    """¿El <script> FAQPage va dentro del content?
+
+    No, si el sitio lo guarda en Rank Math (`faq_schema_via_meta`) o si no lleva
+    schema FAQ (`sin_faq_schema`). La compuerta G07e rechaza cualquier <script> en
+    el content, así que con el valor por defecto (True) ningún artículo pasaría:
+    eso tuvo a raditech y propertyledger sin publicar desde el 14-ago-2026.
+    """
+    return not (site.get("faq_schema_via_meta") or site.get("sin_faq_schema"))
+
+
 def _parse_json(text: str) -> dict:
     """Extrae y parsea JSON de la respuesta de Claude, con reparación automática."""
     clean = text.strip()
@@ -142,7 +153,7 @@ Responde únicamente con el JSON corregido."""
         blog_data = _parse_json(full_text)
         if blog_data.get("content"):
             blog_data["content"] = rebuild_faq_jsonld(
-                blog_data["content"], include_script=not site.get("faq_schema_via_meta"))
+                blog_data["content"], include_script=_faq_script_en_content(site))
         print(f"[Writer] Blog editado: {blog_data.get('title', 'Sin título')}")
         return blog_data
     except Exception as e:
@@ -263,7 +274,7 @@ Responde solo con el JSON corregido."""
             mejor["content"] = _conservar_enlaces_externos(
                 blog_data.get("content", ""), mejor["content"], site.get("wp_url") or "")
             mejor["content"] = rebuild_faq_jsonld(
-                mejor["content"], include_script=not site.get("faq_schema_via_meta"))
+                mejor["content"], include_script=_faq_script_en_content(site))
         return mejor
     except Exception as e:
         print(f"[Writer] No se pudo iterar el artículo: {e}")
@@ -347,7 +358,7 @@ Responde únicamente con el JSON solicitado."""
         blog_data = _parse_json(full_text)
         if blog_data.get("content"):
             blog_data["content"] = rebuild_faq_jsonld(
-                blog_data["content"], include_script=not site.get("faq_schema_via_meta"))
+                blog_data["content"], include_script=_faq_script_en_content(site))
         print(f"[Writer] Blog generado: {blog_data.get('title', 'Sin título')}")
         return blog_data
     except Exception as e:
