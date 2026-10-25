@@ -61,6 +61,23 @@ def _service_pages(site_key: str) -> list:
             if u.rstrip("/") == base or not any(f in u for f in fuera)]
 
 
+def tema_ocupado(site_key: str, topic: str) -> bool:
+    """True si el tema ya tiene post (o borrador): su slug ASCII coincide con el de un
+    post, o todas sus palabras clave estan en el slug de uno. Sin esto el selector
+    repetia 'preparacion para tomografia' (ya publicado como #17) cada sabado."""
+    from tools.images import _ascii_slug
+    from tools.topic_index import STOPWORDS, load
+    slug = _ascii_slug(topic, "")
+    palabras = {w for w in slug.split("-") if w and w not in STOPWORDS}
+    for p in load(site_key).get("posts", []):
+        ps = p.get("slug") or ""
+        if ps == slug:
+            return True
+        if palabras and palabras <= {w for w in ps.split("-") if w}:
+            return True
+    return False
+
+
 def run_guarded_pipeline(site_key: str, topic: str = None, *, dry_run: bool = False,
                          headless: bool = True) -> dict:
     """Devuelve el reporte. `dry_run=True` se detiene antes de crear el borrador."""
@@ -117,7 +134,18 @@ def run_guarded_pipeline(site_key: str, topic: str = None, *, dry_run: bool = Fa
         if not topic:
             from tools.logger import get_used_topics
             from tools.trends import pick_topic
-            topic = pick_topic(site_key, get_used_topics(site_key))
+            usados = list(get_used_topics(site_key))
+            for _ in range(15):
+                topic = pick_topic(site_key, usados)
+                if not tema_ocupado(site_key, topic):
+                    break
+                print(f"[tema] '{topic}' ya existe en el sitio; se busca otro")
+                usados.append(topic)
+            else:
+                rep.add(GateResult("G03-pre", "Tema nuevo disponible", passed=False,
+                                   reason="todos los temas candidatos ya estan publicados; "
+                                          "hace falta ampliar keywords_seed o la cola de temas"))
+                return salir()
         rep.topic = topic
         print(f"[tema] {topic}")
 
