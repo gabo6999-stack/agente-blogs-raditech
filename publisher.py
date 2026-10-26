@@ -207,11 +207,12 @@ def run_guarded_pipeline(site_key: str, topic: str = None, *, dry_run: bool = Fa
 
         # Retoques acotados: descripcion 150-160 y 2 enlaces externos distintos.
         print("\n[retoques] Descripción y enlaces externos")
-        from tools.retoques import ajustar_descripcion, completar_externos, variar_anclas
+        from tools.retoques import ajustar_descripcion, completar_externos, variar_anclas, acortar_slug
         try:
             ajustar_descripcion(site_key, blog_data)
             completar_externos(site_key, blog_data, SITES[site_key].get("wp_url") or "")
             blog_data["content"] = variar_anclas(blog_data.get("content", ""))
+            acortar_slug(blog_data)
         except Exception as e:   # las compuertas decidirán; un retoque fallido no tumba el pipeline
             print(f"  [retoque] no se pudo: {e}")
 

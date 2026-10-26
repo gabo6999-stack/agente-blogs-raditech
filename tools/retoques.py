@@ -30,7 +30,7 @@ def _recortar(desc: str) -> str:
     return corte + "." if not corte.endswith((".", "!", "?")) and len(corte) < DESC_MAX else corte
 
 
-def ajustar_descripcion(site_key: str, blog_data: dict, intentos: int = 3) -> bool:
+def ajustar_descripcion(site_key: str, blog_data: dict, intentos: int = 6) -> bool:
     """Deja rank_math_description en 150-160 con la keyword literal. True si lo logra."""
     desc = (blog_data.get("rank_math_description") or "").strip()
     fk = (blog_data.get("rank_math_focus_keyword") or "").strip()
@@ -45,7 +45,7 @@ def ajustar_descripcion(site_key: str, blog_data: dict, intentos: int = 3) -> bo
             model=MODEL, max_tokens=300,
             messages=[{"role": "user", "content":
                 f"Meta description actual ({len(desc)} caracteres): {desc!r}\n"
-                f"Reescribela en {idioma} con entre {DESC_MIN} y {DESC_MAX} caracteres EXACTOS "
+                f"Reescribela en {idioma} con entre {DESC_MIN} y {DESC_MAX} caracteres EXACTOS (apunta a 155; cuenta los caracteres antes de responder) "
                 f"({pista}), conservando el sentido y la frase exacta {fk!r}. "
                 f"Titulo del articulo: {blog_data.get('title', '')!r}. "
                 "Responde SOLO con la descripcion, sin comillas ni explicacion."}])
@@ -157,3 +157,32 @@ def variar_anclas(content: str) -> str:
         return m.group(1) + _VARIANTES[(n - 1) % len(_VARIANTES)].format(a=texto) + m.group(3)
 
     return _ANCLA.sub(_cambia, content or "")
+
+
+_RELLENO_SLUG = {"guia", "completa", "completo", "para", "de", "del", "la", "el", "los", "las",
+                 "en", "y", "que", "como", "con", "un", "una", "por", "al", "cambia", "sobre"}
+
+
+def acortar_slug(blog_data: dict, maximo: int = 6) -> bool:
+    """G04b exige <=6 palabras. Conserva primero las palabras de la focus keyword (G08g
+    la quiere en el slug), luego las demas sin relleno, respetando el orden original."""
+    import unicodedata
+    slug = (blog_data.get("slug") or "").strip("-")
+    palabras = [w for w in slug.split("-") if w]
+    if len(palabras) <= maximo:
+        return True
+    fk = unicodedata.normalize("NFKD", blog_data.get("rank_math_focus_keyword") or "")
+    fk = fk.encode("ascii", "ignore").decode("ascii").lower()
+    clave = [w for w in re.split(r"[^a-z0-9]+", fk) if w]
+    elegidas = [w for w in palabras if w in clave]
+    for w in palabras:
+        if len(elegidas) >= maximo:
+            break
+        if w not in elegidas and w not in _RELLENO_SLUG:
+            elegidas.append(w)
+    nuevo = "-".join(w for w in palabras if w in elegidas)[:80]
+    if nuevo and len(nuevo.split("-")) <= maximo:
+        print(f"  [retoque] slug acortado: {slug} -> {nuevo}")
+        blog_data["slug"] = nuevo
+        return True
+    return False
