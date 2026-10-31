@@ -816,7 +816,8 @@ def update_schedule(req: ScheduleRequest):
     invalid = [d for d in req.days if d not in valid_days]
     if invalid:
         raise HTTPException(status_code=400, detail=f"Días inválidos: {invalid}")
-    if not req.days:
+    # Lista vacía = PAUSAR ese sitio (no se programa ningún día). Solo por sitio, nunca "__all__".
+    if not req.days and req.site_key == "__all__":
         raise HTTPException(status_code=400, detail="Debes seleccionar al menos un día")
     if req.site_key == "__all__":
         reschedule_all(req.days, req.publish_time)
