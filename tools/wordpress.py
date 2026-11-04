@@ -5,6 +5,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 from config import SITES
 from tools.faq_schema import extract_visible_faq
+from tools.categories import pick_category
 
 
 # Cabeceras ya resueltas por sitio: {site_key: (wp_url, headers, caducidad)}
@@ -201,7 +202,20 @@ def create_draft(site_key: str, blog_data: dict, featured_media_id: int = None) 
         payload["featured_media"] = featured_media_id
 
     category_name = blog_data.get("category") or site.get("category", "")
-    cat_id, cat_error = resolve_category(wp_url, headers, category_name, site_key)
+    cat_id, cat_error = None, ""
+    if site.get("category_rules"):
+        # Categoría de servicio por tema/keyword (migas de pan). Si no existe en WordPress
+        # no se crea: se sigue con el flujo de siempre (la del redactor, luego la del sitio).
+        regla = pick_category(site_key, blog_data.get("topic", ""),
+                              blog_data.get("rank_math_focus_keyword", ""),
+                              blog_data.get("title", ""), category_name)
+        cat_id, cat_error = resolve_category(wp_url, headers, regla, site_key)
+        if cat_id:
+            category_name = regla
+        else:
+            print(f"[WP] Categoría por regla '{regla}' no existe; se usa el flujo normal")
+    if not cat_id:
+        cat_id, cat_error = resolve_category(wp_url, headers, category_name, site_key)
     if not cat_id and site.get("category") and site["category"] != category_name:
         # El redactor a veces inventa una categoria ('Rayos X'); sin ella el post cae a
         # Uncategorized y G06b lo bloquea. Se usa la categoria configurada del sitio.

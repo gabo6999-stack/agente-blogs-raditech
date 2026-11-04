@@ -188,6 +188,18 @@ SITES = {
         # cuenta, por eso existe esta clave aparte. Ver tools.rankmath_browser._parece_app_password.
         "wp_login_password": os.getenv("SITE3_WP_LOGIN_PASSWORD"),
         "category": "Radiología e Imagen",
+        # Categoría de servicio determinista para las migas de pan: se evalúa EN ORDEN y
+        # gana la primera coincidencia (por eso 'panorámica dental' no cae en Rayos X).
+        # Palabras clave en minúsculas y sin acentos; sin coincidencia -> "category".
+        # Ver tools.categories.pick_category.
+        "category_rules": [
+            ("Mastografía", ["mastograf", "mamograf", "bi-rads", "birads", "mama"]),
+            ("Panorámica dental", ["panoramic", "ortopantomograf", "dental"]),
+            ("Tomografía", ["tomograf", "tac", "escaner"]),
+            ("Ultrasonido", ["ultrasonid", "ecograf", "sonograf"]),
+            ("Rayos X", ["rayos x", "radiograf", "placa de torax"]),
+            ("Otros estudios", ["densitometr", "electrocardiograf", "resonancia"]),
+        ],
         "niche": "radiología e imagenología diagnóstica para pacientes (rayos X, tomografía, ultrasonido, mastografía) en Mazatlán, Sinaloa",
         "language": "es",
         # La cuenta publicadora (pedrogavito) es 'author': WordPress borra el
