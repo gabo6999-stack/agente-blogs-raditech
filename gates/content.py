@@ -94,6 +94,17 @@ def g07_valid_html(content: str) -> list[GateResult]:
         details={"encontradas": prohibidas},
     ))
 
+    # Las marcas de cita de web_search llegaron a verse publicadas como
+    # «(cite index="37-4">» (cmlc, oct-2026). sanitize() las quita; si alguna sobrevive, no se publica.
+    from tools.html_tools import CITA_RE
+    citas = CITA_RE.findall(content or "")
+    out.append(GateResult(
+        "G07g", "Sin marcas de cita de web_search (<cite index=…>)",
+        passed=not citas,
+        reason="" if not citas else f"{len(citas)} marca(s) de cita en el cuerpo: {citas[:3]}",
+        details={"citas": len(citas)},
+    ))
+
     # Un artículo no debería llegar envuelto en <div> de maquetación: los 7 posts
     # de la ráfaga del 12-ago venían dentro de <div class="pls-root pls-blog alignfull">
     # con su propio bloque <style> y un @import de Google Fonts.

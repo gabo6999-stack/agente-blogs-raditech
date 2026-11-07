@@ -121,6 +121,11 @@ def normalize_text(s: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", s or "")).strip().lower()
 
 
+# apertura (bien formada, rota con «(» o escapada) y cierre de las marcas de cita
+CITA_RE = re.compile(
+    r'<cite\b[^>]*>|</cite>|\(cite\s+index="[^"]*"(?:&gt;|>)|&lt;/?cite\b[^&]*&gt;', re.I)
+
+
 def sanitize(html: str, post_title: str = "") -> tuple[str, list[str]]:
     """Arregla lo mecanico y devuelve (html, lista de cambios aplicados).
 
@@ -158,6 +163,15 @@ def sanitize(html: str, post_title: str = "") -> tuple[str, list[str]]:
         out = re.sub(r'\s+style\s*=\s*"[^"]*"', "", out)
         out = re.sub(r"\s+style\s*=\s*'[^']*'", "", out)
         changes.append(f"quitados {len(styled)} atributo(s) style en linea")
+
+    # Marcas de cita de web_search: el modelo envuelve frases en <cite index="37-4">…</cite>.
+    # Al guardar, WordPress dejaba unas como cursivas sueltas y otras rotas a la vista,
+    # «(cite index="37-4">», en 10 de 16 posts de cmlc (limpiados el 7-nov-2026). Se quita
+    # la marca y se conserva el texto citado.
+    citas = len(CITA_RE.findall(out))
+    if citas:
+        out = CITA_RE.sub("", out)
+        changes.append(f"quitadas {citas} marca(s) de cita de web_search (<cite index=…>)")
 
     # '&' suelto -> &amp; (sin tocar los que ya son entidades ni los de dentro de href)
     def _amp(m):
