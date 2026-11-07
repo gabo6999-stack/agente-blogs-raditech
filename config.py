@@ -21,11 +21,11 @@ SITES = {
         "language": "es",
         "keywords_seed": [
             "PACS México", "sistema PACS hospital", "teleradiología",
-            "RIS radiología", "HIS hospital", "imágenes médicas digitales",
+            "RIS radiología", "imágenes médicas digitales",
             "DICOM viewer", "radiología digital", "software médico hospital",
             "gestión de estudios radiológicos", "VIRA PACS", "teleradiología 24/7",
-            "sistema de información hospitalaria", "radiología a distancia",
-            "expediente clínico electrónico", "interoperabilidad HL7 FHIR",
+            # Sin HIS ni expediente clínico: Raditech dejó de vender HIS el 6-ago-2026.
+            "radiología a distancia", "interoperabilidad HL7 FHIR",
             "inteligencia artificial radiología", "workstation radiología",
             "monitor médico diagnóstico", "seguridad informática salud",
         ],

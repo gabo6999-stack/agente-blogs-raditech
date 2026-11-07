@@ -41,7 +41,9 @@ def _slug_de(kw_normalizada: str) -> str:
 def _cuenta(texto_normalizado: str, kw_normalizada: str) -> int:
     if not kw_normalizada:
         return 0
-    return len(re.findall(re.escape(kw_normalizada), texto_normalizado))
+    # Frase completa: sin estos límites, «his hospital» contaba también cada
+    # «HIS hospitalario» y el 6-nov-2026 dio 94 apariciones en vez de ~24 (G08h).
+    return len(re.findall(r"(?<!\w)" + re.escape(kw_normalizada) + r"(?!\w)", texto_normalizado))
 
 
 def analizar(blog_data: dict) -> dict:
