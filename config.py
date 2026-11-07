@@ -17,7 +17,7 @@ SITES = {
         # La FAQ visible se queda.
         "sin_faq_schema": True,
         "category": "Tecnología médica",
-        "niche": "software médico, sistemas PACS-RIS, teleradiología y gestión hospitalaria en México",
+        "niche": "software médico, sistemas PACS-RIS, teleradiología e imagen médica digital en México",
         "language": "es",
         "keywords_seed": [
             "PACS México", "sistema PACS hospital", "teleradiología",
@@ -56,8 +56,9 @@ SITES = {
             ),
             "angles": [
                 "ROI y reducción de costos operativos (menos papel, menos tiempo, menos errores)",
-                "cumplimiento normativo en México (NOM-004, NOM-024, protección de datos en salud)",
-                "interoperabilidad: DICOM, HL7 FHIR e integración del PACS con HIS/EHR",
+                # Sin HIS, expediente clínico ni NOM-004: Raditech dejó de vender HIS el 6-ago-2026.
+                "cumplimiento normativo en México (NOM-024, protección de datos en salud)",
+                "interoperabilidad: DICOM y HL7 FHIR para que el PACS se integre con los sistemas del hospital",
                 "flujo de trabajo clínico: menos tiempo de espera y reportes más rápidos",
                 "teleradiología como respuesta a la escasez de radiólogos en regiones remotas",
                 "seguridad de datos en imagenología (cifrado, acceso controlado, trazabilidad)",
@@ -67,7 +68,7 @@ SITES = {
             "categories": {
                 "Diagnóstico por imagen": "PACS, DICOM, RIS, workstations, monitores médicos y modalidades de imagen (TAC, RM, rayos X)",
                 "Teleradiología": "teleradiología, interpretación remota, radiólogos y subespecialistas a distancia",
-                "Gestión hospitalaria": "digitalización hospitalaria, expediente clínico electrónico, eficiencia operativa, NOM-004",
+                "Gestión hospitalaria": "digitalización del servicio de imagen, flujo de trabajo y eficiencia operativa del área de radiología",
                 "Tecnología médica": "IA en radiología, interoperabilidad HL7/FHIR, ciberseguridad en salud, tendencias del sector",
             },
             "cta": (

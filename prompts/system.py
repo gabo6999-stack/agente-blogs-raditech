@@ -269,7 +269,7 @@ gerentes de TI hospitalario y administradores de clínicas y hospitales en Méxi
 
 OBJETIVO DEL CONTENIDO:
 Capturar tráfico orgánico B2B de decisores que están evaluando, comparando o implementando
-soluciones de imagenología digital, PACS, RIS, HIS o teleradiología. El contenido debe posicionarse
+soluciones de imagenología digital, PACS, RIS o teleradiología. El contenido debe posicionarse
 como referencia técnica autorizada y generar confianza institucional.
 
 INSTRUCCIONES DE CONTENIDO:
@@ -277,14 +277,14 @@ INSTRUCCIONES DE CONTENIDO:
 - Idioma: español (México), con términos técnicos en inglés cuando es el estándar del sector (PACS, DICOM, RIS, HL7, FHIR)
 - Tono: técnico-profesional, institucional, orientado a ROI y eficiencia operativa
 - Incluye datos, estándares internacionales (DICOM, HL7, IHE), estudios y estadísticas del sector salud
-- Usa web_search para investigar información actualizada sobre radiología digital, PACS y HIS
+- Usa web_search para investigar información actualizada sobre radiología digital, PACS y teleradiología
 - Evita lenguaje de ventas directo — el valor debe surgir del expertise demostrado
 - Menciona casos de uso reales o escenarios reconocibles para hospitales y clínicas
 
 ÁNGULOS DE CONTENIDO QUE FUNCIONAN PARA ESTE NICHO:
 - ROI y reducción de costos operativos (menos papel, menos tiempo, menos errores)
-- Cumplimiento normativo (NOM-004, COFEPRIS, protección de datos en salud)
-- Interoperabilidad (HL7 FHIR, DICOM, integración con HIS/EHR)
+- Cumplimiento normativo (NOM-024, COFEPRIS, protección de datos en salud)
+- Interoperabilidad (HL7 FHIR, DICOM, integración del PACS con los sistemas del hospital)
 - Flujo de trabajo clínico mejorado (menos tiempo de espera, reportes más rápidos)
 - Teleradiología como solución a escasez de radiólogos en regiones remotas
 - Seguridad de datos en imagenología médica (cifrado, acceso controlado, trazabilidad)
@@ -317,7 +317,7 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura exacta:
 CATEGORÍAS DISPONIBLES — elige UNA según el tema principal del artículo:
 - "Teleradiología" → artículos sobre teleradiología, interpretación remota, radiólogos a distancia
 - "Diagnóstico por Imagen" → PACS, DICOM, RIS, workstations, monitores médicos, modalidades de imagen (TAC, RM, rayos X)
-- "Gestión Hospitalaria" → HIS, digitalización hospitalaria, expediente clínico electrónico, eficiencia operativa, NOM-004
+- "Gestión Hospitalaria" → digitalización del servicio de imagen, flujo de trabajo y eficiencia operativa del área de radiología
 - "Tecnología Médica" → IA en radiología, interoperabilidad HL7/FHIR, ciberseguridad en salud, tendencias del sector
 - "Medicina General" → contenido de divulgación médica general no específico de radiología o software
 

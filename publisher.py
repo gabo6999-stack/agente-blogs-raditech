@@ -245,24 +245,36 @@ def run_guarded_pipeline(site_key: str, topic: str = None, *, dry_run: bool = Fa
         media_id, image_bytes = None, None
         reg = image_registry.load(site_key)
         ya_usadas = set(reg.get("by_unsplash_id", {}).keys())
-        query = blog_data.get("unsplash_query") or site.get("unsplash_fallback", topic)
+        # Búsquedas en orden: la del redactor, la misma recortada a 2 palabras y la de
+        # respaldo del sitio. El 2-nov-2026 «hospital radiology workstation» no dio
+        # resultados en Unsplash y el post se quedó sin imagen (G02a).
+        q_redactor = (blog_data.get("unsplash_query") or "").strip()
+        consultas = []
+        for q in (q_redactor, " ".join(q_redactor.split()[:2]), site.get("unsplash_fallback"), topic):
+            if q and q not in consultas:
+                consultas.append(q)
         fk = blog_data.get("rank_math_focus_keyword", "")
 
-        for intento_img in range(3):
-            img = get_unsplash_image(query, skip_ids=ya_usadas)
-            if not img:
+        img = None
+        for query in consultas:
+            for intento_img in range(3):
+                img = get_unsplash_image(query, skip_ids=ya_usadas)
+                if not img:
+                    break
+                image_bytes = download_image(img)
+                if not image_bytes:
+                    break
+                dup = image_registry.check(site_key, image_bytes,
+                                           width=img.get("width"), height=img.get("height"),
+                                           unsplash_id=img.get("unsplash_id", ""))
+                if not dup["duplicate"]:
+                    break
+                print(f"  imagen repetida ({dup['reason']}); se pide otra")
+                ya_usadas.add(img.get("unsplash_id", ""))
+                image_bytes = None
+            if image_bytes and img:
                 break
-            image_bytes = download_image(img)
-            if not image_bytes:
-                break
-            dup = image_registry.check(site_key, image_bytes,
-                                       width=img.get("width"), height=img.get("height"),
-                                       unsplash_id=img.get("unsplash_id", ""))
-            if not dup["duplicate"]:
-                break
-            print(f"  imagen repetida ({dup['reason']}); se pide otra")
-            ya_usadas.add(img.get("unsplash_id", ""))
-            image_bytes = None
+            print(f"  sin imagen útil para «{query}»; se prueba la siguiente búsqueda")
 
         if image_bytes and img:
             alt = build_alt_text(img, fk, topic)
