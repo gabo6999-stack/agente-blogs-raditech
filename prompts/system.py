@@ -24,6 +24,11 @@ def _get_profiled_prompt(niche: str, word_count: int, p: dict, language: str = "
         "Google Ads, Meta for Business, TikTok for Business, HubSpot, Statista, INEGI, etc.")
 
     angles_str = "\n".join(f"- {a}" for a in angles)
+    # Regla de títulos propia del sitio (opcional). En raditech la fórmula repetida
+    # «…Guía Completa para Hospitales y Clínicas en México 2026» hacía que G03 viera
+    # cualquier título nuevo 76-79 % igual a #1035/#1159 sin importar el tema.
+    title_rules = (p.get("title_rules") or "").strip()
+    title_rules_str = f"TÍTULO — REGLA DE ESTE SITIO (obligatoria):\n{title_rules}\n\n" if title_rules else ""
     cat_names = list(categories.keys())
     default_cat = cat_names[0] if cat_names else "Blog"
     word_count_max = word_count + 300  # techo duro; evita que el content infle y trunque el JSON
@@ -185,7 +190,7 @@ ESTRUCTURA DEL ARTÍCULO:
 6. SECCIÓN FAQ OBLIGATORIA al final: <h2>Preguntas frecuentes</h2> seguido de AL MENOS 4 pares <h3>¿Pregunta?</h3><p>Respuesta concisa</p>
    NO escribas ningún schema JSON-LD / <script> tú mismo — el sistema genera el schema FAQPage automáticamente a partir de estas preguntas y respuestas visibles. Solo redacta bien y con claridad la FAQ visible <h3>/<p>.
 
-FOCUS KEYWORD — LA REGLA QUE MÁS PESA:
+{title_rules_str}FOCUS KEYWORD — LA REGLA QUE MÁS PESA:
 Elige UNA frase corta (3-5 palabras) como `rank_math_focus_keyword` y escribe el artículo ALREDEDOR de ella.
 Rank Math busca la **frase EXACTA, palabra por palabra**: si eliges "contabilidad para administradores" y el
 texto dice "contabilidad de administradores", para Rank Math NO aparece ni una sola vez.

@@ -76,6 +76,17 @@ SITES = {
                 "(VIRA PACS, PACS-RIS o el servicio de teleradiología) enlazando su página de producto, "
                 "o a solicitar una demostración en https://raditech.mx/contacto/ — nunca lenguaje de venta agresivo"
             ),
+            "title_rules": (
+                "- El título nombra el tema CONCRETO del artículo y lo que el lector se lleva (un criterio, una comparación, "
+                "un costo, unos pasos, un cambio de norma), no una fórmula genérica.\n"
+                "- PROHIBIDO usar las fórmulas que ya se repiten en el blog: «Guía Completa», «Guía Definitiva», "
+                "«para Hospitales y Clínicas en México», «Todo lo que necesitas saber». Varios posts ya se titulan así y "
+                "el filtro de duplicados rechaza cualquier título parecido a ellos aunque el tema sea otro.\n"
+                "- México o el año, como mucho una vez y solo si aportan.\n"
+                "- Estilo buscado: «Monitor médico diagnóstico: 7 criterios para elegirlo según la modalidad», "
+                "«PACS en la nube o local: qué cambia en costo, seguridad y soporte», "
+                "«BI-RADS v2025: qué cambia para los servicios de radiología e imagen mamaria»."
+            ),
             "external_examples": (
                 "el estándar DICOM (dicomstandard.org), HL7 (hl7.org), las normas oficiales mexicanas en "
                 "el DOF, la Secretaría de Salud, la OMS, RSNA, ACR o estudios indexados en PubMed"
