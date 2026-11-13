@@ -317,18 +317,27 @@ Responde únicamente con el JSON solicitado."""
         messages=messages
     )
 
-    while response.stop_reason == "tool_use":
-        tool_results = []
-        for block in response.content:
-            if block.type == "tool_use":
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": "Search completed"
-                })
-
+    # web_search es herramienta de SERVIDOR: la API hace las búsquedas sola y,
+    # si el bucle de búsquedas se alarga, corta el turno con stop_reason
+    # "pause_turn". Hay que reenviar el contenido tal cual para que siga. Antes
+    # no se manejaba: se parseaba el texto a medias y repair_json lo "cerraba"
+    # (raditech 9-nov: 356 palabras, 1 <h2>, 0 enlaces internos).
+    continuaciones = 0
+    while response.stop_reason in ("tool_use", "pause_turn"):
+        continuaciones += 1
+        if continuaciones > 6:
+            raise RuntimeError(
+                f"[Writer] Demasiadas continuaciones ({response.stop_reason}) "
+                f"generando '{topic}'. NO se publica contenido incompleto.")
+        print(f"[Writer] Continuando turno ({response.stop_reason}, {continuaciones})")
         messages.append({"role": "assistant", "content": response.content})
-        messages.append({"role": "user", "content": tool_results})
+        if response.stop_reason == "tool_use":
+            tool_results = [{
+                "type": "tool_result",
+                "tool_use_id": block.id,
+                "content": "Search completed"
+            } for block in response.content if block.type == "tool_use"]
+            messages.append({"role": "user", "content": tool_results})
 
         response = client.messages.create(
             model="claude-sonnet-4-5",
@@ -351,8 +360,19 @@ Responde únicamente con el JSON solicitado."""
             f"[Writer] La respuesta de Claude se cortó por límite de tokens "
             f"(max_tokens=20000) generando '{topic}'. NO se publica contenido truncado."
         )
+    if response.stop_reason != "end_turn":
+        raise RuntimeError(
+            f"[Writer] La respuesta terminó con stop_reason={response.stop_reason!r} "
+            f"generando '{topic}'. NO se publica contenido incompleto.")
 
-    full_text = "".join(block.text for block in response.content if hasattr(block, "text"))
+    # Tras un pause_turn el texto queda repartido en varios mensajes del asistente:
+    # se junta todo lo que el modelo escribió en este turno, no solo la última parte.
+    bloques = []
+    for m in messages[1:]:
+        if m["role"] == "assistant":
+            bloques.extend(m["content"])
+    bloques.extend(response.content)
+    full_text = "".join(block.text for block in bloques if getattr(block, "type", "") == "text")
 
     try:
         blog_data = _parse_json(full_text)
